@@ -1,14 +1,18 @@
-package dataanalysis;
+package audioplayer;
 
+import audiofilereader.MusicData;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import uilibrary.Panel;
 
 public class WaveformDrawer implements Panel {
 	private int x, y, width, height;
-	private final Game game;
+	//private final Game game;
+	private MusicData musicData;
+	private AudioPlayer audioPlayer;
 	private final int xOffset = 5;
 	private int widthOffset = 10; //can change based on how big the waveform render was. Edit. doesnt change currently, it was buggy
 	
@@ -25,23 +29,31 @@ public class WaveformDrawer implements Panel {
 	private boolean abortRender = false;
 	private Camera cam;
 	
-	public WaveformDrawer(int x, int y, int width, int height, Game game) {
+	private boolean mono = false;
+	
+	public WaveformDrawer(int x, int y, int width, int height, MusicData musicData, AudioPlayer audioPlayer) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
-		this.game = game;
+		this.musicData = musicData;
+		this.audioPlayer = audioPlayer;
 		cam = new Camera();
 		
 		createWaveformImages();
 	}
 	
+	public void setMono(boolean b) {
+		mono = b;
+		waveformChanged = true;
+	}
+	
 	public void update() {
-		int frame = (int) game.audioPlayer.getCurrentFrame();
+		int frame = (int) audioPlayer.getCurrentFrame();
 		
-		while (!game.audioPlayer.isPaused() && getTValueByFrameInWaveArea(frame) > 0.9 && !lastSampleIsVisible()) {
+		while (!audioPlayer.isPaused() && getTValueByFrameInWaveArea(frame) > 0.9 && !lastSampleIsVisible()) {
 			int newStart = getFrameByTValueInWaveArea(0.8);
-			cam.setFirstSample(newStart, game.musicData);
+			cam.setFirstSample(newStart, musicData);
 			waveformChanged = true;
 		}
 		
@@ -59,7 +71,9 @@ public class WaveformDrawer implements Panel {
 		g.fillRect(x, y + h, width, h);
 		
 		g.drawImage(waveformLeft, getWaveformX(), y, null);
-		g.drawImage(waveformRight, getWaveformX(), y + h, null);
+		if (!mono) {
+			g.drawImage(waveformRight, getWaveformX(), y + h, null);
+		}
 		
 		g.setColor(Color.BLACK);
 		g.drawLine(x, y + h, width, y + h);
@@ -71,11 +85,11 @@ public class WaveformDrawer implements Panel {
 	}
 	
 	private void renderPlaybackLine(Graphics2D g) {
-		if (game.audioPlayer.isActive()) {
+		if (audioPlayer.isActive()) {
 			g.setColor(Color.red);
 			g.setStroke(new BasicStroke(2f));
 			
-			renderLine(g, (int) game.audioPlayer.getCurrentFrame());
+			renderLine(g, (int) audioPlayer.getCurrentFrame());
 		}
 	}
 	
@@ -106,23 +120,19 @@ public class WaveformDrawer implements Panel {
 	}
 	
 	private double getTValueByFrameInWaveArea(int frame) {
-		int sampleCount = cam.getSampleCount(game.musicData);
+		int sampleCount = cam.getSampleCount(musicData);
 		double t = (frame - cam.getFirstSample()) / (double) sampleCount;
 		return t;
 	}
 	
 	private int getFrameByTValueInWaveArea(double t) {
-		int frame = (int) (t * cam.getSampleCount(game.musicData) + cam.getFirstSample());
+		int frame = (int) (t * cam.getSampleCount(musicData) + cam.getFirstSample());
 		return frame;
 	}
 	
 	private boolean lastSampleIsVisible() {
-		double t = getTValueByFrameInWaveArea(game.musicData.getFrameCount());
+		double t = getTValueByFrameInWaveArea(musicData.getFrameCount());
 		return t <= 1;
-	}
-	
-	public int getMaxValue() {
-		return (int) Math.pow(2, game.musicData.bitsPerSample) / 2;
 	}
 	
 	public int getSamplesPerPixel(int sampleCount) {
@@ -142,24 +152,31 @@ public class WaveformDrawer implements Panel {
 	}
 	
 	public void mousePressed(MouseEvent e) {
-		if (!dragging && !isInside(e.getX(), e.getY())) {
+		if (!isInside(e.getX(), e.getY())) {
 			return;
 		}
 		
 		clickedFrame = (int) xCoordToFrame(e.getX() + 2);
 		
-		long frame = Math.min(game.musicData.getFrameCount(), Math.max(0, clickedFrame));
-		game.updateCurrentLocationByFrame(frame);
+		int frame = Math.min(musicData.getFrameCount(), Math.max(0, clickedFrame));
+		audioPlayer.updateCurrentLocationByFrame(frame, true);
 		
-		dragging = true; //this is after game.updateCurrentLocationByFrame (which will pause the audioPlayer, and try to continue from new location) because first time after mouse down we want it to flush the buffer, and second time not while dragging.
+		dragging = true; //this is after audioPlayer.updateCurrentLocationByFrame (which will pause the audioPlayer, and try to continue from new location) because first time after mouse down we want it to flush the buffer, and second time not while dragging.
 	}
 	
-	public void mouseReleased(MouseEvent e) {
+	public void mouseDragged(MouseEvent e) {
+		if (!dragging || !isInside(e.getX(), e.getY())) {
+			return;
+		}
 		
+		clickedFrame = (int) xCoordToFrame(e.getX() + 2);
+		
+		int frame = Math.min(musicData.getFrameCount(), Math.max(0, clickedFrame));
+		audioPlayer.updateCurrentLocationByFrame(frame, false);
 	}
 	
 	public int frameToXCoord(int frame) {
-		int sampleCount = cam.getSampleCount(game.musicData);
+		int sampleCount = cam.getSampleCount(musicData);
 		double t = (frame - cam.getFirstSample()) / (double) sampleCount;
 		int xx = getWaveformX() + (int) (t * getWaveformAreaWidth());
 		
@@ -170,18 +187,20 @@ public class WaveformDrawer implements Panel {
 		double t = (x - getWaveformX()) / (double) getWaveformAreaWidth();
 		int frame = getFrameByTValueInWaveArea(t);
 		
-		return (int) Math.max(0, Math.min(game.musicData.getFrameCount(), frame));
+		return (int) Math.max(0, Math.min(musicData.getFrameCount(), frame));
 	}
 	
 	public void createWaveformImages() {
 		rendering = true;
 		waveformChanged = false;
-		int h = height / 2;
+		int h = height / (mono ? 1 : 2);
 		waveformLeft = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
-		waveformRight = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
+		renderWaveform(waveformLeft.createGraphics(), musicData.getSamplesChannel(true, cam.getFirstSample(), cam.getSampleCount(musicData)), h);
 		
-		renderWaveform(waveformLeft.createGraphics(), game.musicData.getSamplesChannel(true, cam.getFirstSample(), cam.getSampleCount(game.musicData)), h);
-		renderWaveform(waveformRight.createGraphics(), game.musicData.getSamplesChannel(false, cam.getFirstSample(), cam.getSampleCount(game.musicData)), h);
+		if (!mono) {
+			waveformRight = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
+			renderWaveform(waveformRight.createGraphics(), musicData.getSamplesChannel(false, cam.getFirstSample(), cam.getSampleCount(musicData)), h);
+		}
 		
 		if (abortRender) {
 			waveformChanged = true;
@@ -199,7 +218,7 @@ public class WaveformDrawer implements Panel {
 	private void renderWaveform(Graphics2D g, short[] samples, int height) {
 		int sampleCount = samples.length;
 		int samplesPerPixel = getSamplesPerPixel(sampleCount);
-		int maxValue = getMaxValue();
+		int maxValue = musicData.getMaxValue();
 		
 		g.setColor(Color.BLUE);
 		g.setStroke(new BasicStroke(1f));
@@ -317,6 +336,9 @@ public class WaveformDrawer implements Panel {
 	}
 	
 	public int getClickedFrame() {
+		if (clickedFrame == null) {
+			return 0;
+		}
 		return clickedFrame;
 	}
 	
@@ -329,9 +351,9 @@ public class WaveformDrawer implements Panel {
 		
 		cam.zoom(amount);
 		
-		int sampleOffset = (int) (cam.getSampleCount(game.musicData) * t);
+		int sampleOffset = (int) (cam.getSampleCount(musicData) * t);
 		int startFrame = hoverFrame - sampleOffset;
-		cam.setFirstSample(startFrame, game.musicData);
+		cam.setFirstSample(startFrame, musicData);
 		
 		System.out.println("ZOOM! " + cam.getZoom());
 		

@@ -1,13 +1,14 @@
-package dataanalysis;
+package audioplayer;
 
-import dataanalysis.RenderText.Alignment;
-import dataanalysis.menu.HelperFunctions;
+import uilibrary.RenderText.Alignment;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
+import uilibrary.Panel;
+import uilibrary.RenderText;
 
 public class VolumeSlider implements Panel {
 	private int x, y, width, height;

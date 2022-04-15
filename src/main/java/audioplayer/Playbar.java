@@ -1,14 +1,15 @@
-package dataanalysis;
+package audioplayer;
 
-import dataanalysis.RenderText.Alignment;
-import dataanalysis.menu.Button;
-import dataanalysis.menu.StringAlignment;
+import uilibrary.RenderText.Alignment;
+import uilibrary.menu.Button;
+import uilibrary.menu.StringAlignment;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import uilibrary.RenderText;
 
 //Current time, play, stop etc buttons. maybe other information
 public class Playbar {

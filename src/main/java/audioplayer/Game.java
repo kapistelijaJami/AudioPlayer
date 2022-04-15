@@ -1,7 +1,7 @@
-package dataanalysis;
+package audioplayer;
 
 import audiofilereader.MusicData;
-import dataanalysis.enums.DividerOrientation;
+import uilibrary.enums.DividerOrientation;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -11,6 +11,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import lc.kra.system.mouse.GlobalMouseHook;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
+import uilibrary.Divider;
+import uilibrary.PanelContainer;
+import uilibrary.Window;
 
 public class Game implements Runnable {
 	public Window window;
@@ -33,7 +36,7 @@ public class Game implements Runnable {
 	public AudioPlayer audioPlayer;
 	
 	public Game(MusicData musicData) {
-		window = new Window(WIDTH, HEIGHT, "Waveform testi", this, 0, FULLSCREEN);
+		window = new Window(WIDTH, HEIGHT, "Waveform testi", 0, FULLSCREEN);
 		this.musicData = musicData;
 		
 		int volumeDrawerHeight = 70;
@@ -41,13 +44,13 @@ public class Game implements Runnable {
 		int totalWaveFormHeight = HEIGHT - volumeDrawerHeight - playbarHeight;
 		int volumeSliderWidth = 100;
 		
-		waveformDrawer = new WaveformDrawer(0, 0, WIDTH - volumeSliderWidth, totalWaveFormHeight, this);
+		audioPlayer = new AudioPlayer(musicData);
+		waveformDrawer = new WaveformDrawer(0, 0, WIDTH - volumeSliderWidth, totalWaveFormHeight, musicData, audioPlayer);
 		volumeDrawer = new VolumeDrawer(0, totalWaveFormHeight, WIDTH - volumeSliderWidth, volumeDrawerHeight, this);
 		
 		//Horizontal divider
 		horizontalDivider = new Divider(totalWaveFormHeight, 5, 40, new PanelContainer(waveformDrawer), new PanelContainer(volumeDrawer), DividerOrientation.HORIZONTAL);
 		
-		audioPlayer = new AudioPlayer(musicData, waveformDrawer);
 		
 		
 		volumeSlider = new VolumeSlider(WIDTH - volumeSliderWidth, 0, volumeSliderWidth, HEIGHT - playbarHeight, this);
@@ -136,19 +139,15 @@ public class Game implements Runnable {
 	}
 	
 	public void mousePressed(MouseEvent e) {
-		if (!horizontalDivider.mousePressed(e) && !verticalDivider.mousePressed(e)) {
+		if (!horizontalDivider.mousePressed(e) && !verticalDivider.mousePressed(e) && !playbar.mousePressed(e)) {
 			waveformDrawer.mousePressed(e);
 			volumeSlider.mousePressed(e);
 		}
-		
-		playbar.mousePressed(e);
 	}
 	
 	public void mouseDragged(MouseEvent e) { //TODO: do middle mouse move sideways
 		if (!horizontalDivider.mouseDragged(e) && !verticalDivider.mouseDragged(e) && !volumeSlider.mouseDragged(e)) {
-			if (waveformDrawer.getDragging()) {
-				waveformDrawer.mousePressed(e);
-			}
+			waveformDrawer.mouseDragged(e);
 		}
 		
 		mouseMoved(e);
@@ -156,7 +155,7 @@ public class Game implements Runnable {
 	
 	public void mouseReleased(MouseEvent e) {
 		if (!horizontalDivider.mouseReleased(e) && !verticalDivider.mouseReleased(e)) {
-			waveformDrawer.mouseReleased(e);
+			//here if dont want to execute when one of the above returned true
 		}
 		waveformDrawer.setDragging(false);
 		volumeSlider.setDragging(false);
@@ -201,7 +200,7 @@ public class Game implements Runnable {
 		return audioPlayer.getCurrentFrame();
 	}
 	
-	public void updateCurrentLocationByFrame(long frame) {
+	public void updateCurrentLocationByFrame(int frame) {
 		audioPlayer.updateCurrentLocationByFrame(frame);
 	}
 	
@@ -287,7 +286,7 @@ public class Game implements Runnable {
 	}
 	
 	public void stopTheMusic() {
-		audioPlayer.stopTheMusic();
+		audioPlayer.stopTheMusic(waveformDrawer.getClickedFrame());
 	}
 	
 	public void backMilliSeconds(int ms) {

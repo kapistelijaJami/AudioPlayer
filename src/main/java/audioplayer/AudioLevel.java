@@ -1,4 +1,4 @@
-package dataanalysis;
+package audioplayer;
 
 public class AudioLevel {
 	private double levelLeft;

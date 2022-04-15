@@ -1,9 +1,9 @@
-package dataanalysis;
+package audioplayer;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import uilibrary.Panel;
 
-//TODO: I think this is buggy, it doesn't display correct values etc.
 public class VolumeDrawer implements Panel {
 	public int x, y, width, height;
 	public double volumeLeft, volumeRight;

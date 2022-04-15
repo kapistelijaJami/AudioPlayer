@@ -1,4 +1,4 @@
-package dataanalysis;
+package audioplayer;
 
 import audiofilereader.MusicData;
 import java.nio.ByteBuffer;
@@ -18,23 +18,21 @@ import javax.sound.sampled.SourceDataLine;
 
 public class AudioPlayer implements Runnable {
 	private MusicData musicData;
-	private WaveformDrawer waveformDrawer;
 	private SourceDataLine line;
 	private boolean paused = false;
 	private boolean stopped = false;
 	private AudioFormat audioFormat;
 	private FloatControl gain;
 	private int chunkSize;
-	private long currentHEAD;
+	private int currentHEAD;
 	private CountDownLatch latch;
 	
 	public int currentSampleRateMultiplierPercent = 100;
 	
 	private AudioLevel audioLevel;
 	
-	public AudioPlayer(MusicData musicData, WaveformDrawer waveformDrawer) {
+	public AudioPlayer(MusicData musicData) {
 		this.musicData = musicData;
-		this.waveformDrawer = waveformDrawer;
 		audioLevel = new AudioLevel();
 		
 		latch = new CountDownLatch(1);
@@ -174,7 +172,16 @@ public class AudioPlayer implements Runnable {
 		return musicData.bytesToFrameNumber(currentHEAD - line.getBufferSize() / 2);
 	}
 	
-	public void updateCurrentLocationByFrame(long frame) {
+	public void updateCurrentLocationByFrame(int frame) {
+		updateCurrentLocationByFrame(frame, true);
+	}
+	
+	/**
+	 * This will move to the given frame.
+	 * @param frame
+	 * @param flushBuffer When jumping somewhere instantly you want to flush the buffer. But if you are dragging with mouse, it will be crackly, so then false.
+	 */
+	public void updateCurrentLocationByFrame(int frame, boolean flushBuffer) {
 		if (line == null) {
 			return;
 		}
@@ -184,7 +191,7 @@ public class AudioPlayer implements Runnable {
 			start();
 		}
 		
-		if (!waveformDrawer.getDragging()) {
+		if (flushBuffer) {
 			line.flush(); //faster responsiveness for moving around with one click, but dragging around makes it crackly.
 		}
 		
@@ -231,7 +238,7 @@ public class AudioPlayer implements Runnable {
 			}
 		}
 		
-		int maxValue = waveformDrawer.getMaxValue();
+		int maxValue = musicData.getMaxValue();
 		double level = max / (double) maxValue;
 		double average = (total / (double) count) / (double) maxValue;
 		
@@ -254,7 +261,6 @@ public class AudioPlayer implements Runnable {
 			paused = true;
 		} else {
 			if (!line.isRunning()) {
-				updateCurrentLocationByFrame(waveformDrawer.getClickedFrame());
 				start();
 			}
 			paused = false;
@@ -262,12 +268,13 @@ public class AudioPlayer implements Runnable {
 		}
 	}
 	
-	public void stopTheMusic() {
+	public void stopTheMusic(int continueFrame) { //continueFrame is used for resetting location to last clicked point, or to start
 		if (!stopped) {
 			if (!paused) {
 				togglePause();
 			}
 			stop();
+			updateCurrentLocationByFrame(continueFrame);
 		}
 	}
 	

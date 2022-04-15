@@ -1,4 +1,4 @@
-package dataanalysis;
+package audioplayer;
 
 import audiofilereader.MusicData;
 
