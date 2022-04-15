@@ -1,6 +1,7 @@
 package audioplayer;
 
 import audiofilereader.MusicData;
+import java.awt.Canvas;
 import uilibrary.enums.DividerOrientation;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
@@ -46,14 +47,14 @@ public class Game implements Runnable {
 		
 		audioPlayer = new AudioPlayer(musicData);
 		waveformDrawer = new WaveformDrawer(0, 0, WIDTH - volumeSliderWidth, totalWaveFormHeight, musicData, audioPlayer);
-		volumeDrawer = new VolumeDrawer(0, totalWaveFormHeight, WIDTH - volumeSliderWidth, volumeDrawerHeight, this);
+		volumeDrawer = new VolumeDrawer(0, 0, WIDTH - volumeSliderWidth, volumeDrawerHeight, this);
 		
 		//Horizontal divider
 		horizontalDivider = new Divider(totalWaveFormHeight, 5, 40, new PanelContainer(waveformDrawer), new PanelContainer(volumeDrawer), DividerOrientation.HORIZONTAL);
 		
 		
 		
-		volumeSlider = new VolumeSlider(WIDTH - volumeSliderWidth, 0, volumeSliderWidth, HEIGHT - playbarHeight, this);
+		volumeSlider = new VolumeSlider(0, 0, volumeSliderWidth, HEIGHT - playbarHeight, this);
 		//Vertical divider
 		verticalDivider = new Divider(horizontalDivider.getLength(), 5, volumeSliderWidth, new PanelContainer(horizontalDivider), new PanelContainer(volumeSlider), DividerOrientation.VERTICAL);
 		verticalDivider.setMovable(false);
@@ -68,11 +69,12 @@ public class Game implements Runnable {
 	
 	private void init() {
 		Input input = new Input(this);
-		window.getCanvas().addMouseListener(input);
-		window.getCanvas().addMouseMotionListener(input);
-		window.getCanvas().addMouseWheelListener(input);
-		window.getCanvas().addComponentListener(input);
-		window.getCanvas().addKeyListener(input);
+		Canvas canvas = window.getCanvas();
+		canvas.addMouseListener(input);
+		canvas.addMouseMotionListener(input);
+		canvas.addMouseWheelListener(input);
+		canvas.addComponentListener(input);
+		canvas.addKeyListener(input);
 		
 		//window.getFrame().addComponentListener(input);
 		

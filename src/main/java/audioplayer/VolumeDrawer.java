@@ -4,8 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import uilibrary.Panel;
 
-public class VolumeDrawer implements Panel {
-	public int x, y, width, height;
+public class VolumeDrawer extends Panel {
 	public double volumeLeft, volumeRight;
 	private Game game;
 	
@@ -39,45 +38,5 @@ public class VolumeDrawer implements Panel {
 		
 		g.setColor(Color.GREEN);
 		g.fillRect(x, y + yOffset, (int) (width * Math.min(0.6, volume)), height);
-	}
-	
-	@Override
-	public int getX() {
-		return x;
-	}
-	
-	@Override
-	public void setX(int x) {
-		this.x = x;
-	}
-	
-	@Override
-	public int getY() {
-		return y;
-	}
-	
-	@Override
-	public void setY(int y) {
-		this.y = y;
-	}
-	
-	@Override
-	public int getWidth() {
-		return width;
-	}
-	
-	@Override
-	public void setWidth(int width) {
-		this.width = width;
-	}
-	
-	@Override
-	public int getHeight() {
-		return height;
-	}
-	
-	@Override
-	public void setHeight(int height) {
-		this.height = height;
 	}
 }

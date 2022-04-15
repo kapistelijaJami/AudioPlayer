@@ -10,8 +10,7 @@ import java.awt.event.MouseEvent;
 import uilibrary.Panel;
 import uilibrary.RenderText;
 
-public class VolumeSlider implements Panel {
-	private int x, y, width, height;
+public class VolumeSlider extends Panel {
 	private int currentVolumePercent;
 	private int yOffset = 20;
 	private Game game;
@@ -115,46 +114,6 @@ public class VolumeSlider implements Panel {
 	
 	private int getMidLineX() {
 		return x + width / 2 - 15;
-	}
-	
-	@Override
-	public int getWidth() {
-		return width;
-	}
-	
-	@Override
-	public int getHeight() {
-		return height;
-	}
-	
-	@Override
-	public int getX() {
-		return x;
-	}
-	
-	@Override
-	public int getY() {
-		return y;
-	}
-	
-	@Override
-	public void setX(int x) {
-		this.x = x;
-	}
-	
-	@Override
-	public void setY(int y) {
-		this.y = y;
-	}
-	
-	@Override
-	public void setWidth(int width) {
-		this.width = width;
-	}
-	
-	@Override
-	public void setHeight(int height) {
-		this.height = height;
 	}
 	
 	public int getCurrentVolumePercent() {

@@ -8,11 +8,12 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import uilibrary.Panel;
 
-public class WaveformDrawer implements Panel {
-	private int x, y, width, height;
+//TODO: try to optimize the waveform with longer audios more. (with over 1h wav files it's pretty laggy)
+//TODO: Also for subtitle editor, create waveform where it's easier to see the parts where they talk. Mute the others etc for the render.
+public class WaveformDrawer extends Panel {
 	//private final Game game;
-	private MusicData musicData;
-	private AudioPlayer audioPlayer;
+	private final MusicData musicData;
+	private final AudioPlayer audioPlayer;
 	private final int xOffset = 5;
 	private int widthOffset = 10; //can change based on how big the waveform render was. Edit. doesnt change currently, it was buggy
 	
@@ -158,7 +159,7 @@ public class WaveformDrawer implements Panel {
 		
 		clickedFrame = (int) xCoordToFrame(e.getX() + 2);
 		
-		int frame = Math.min(musicData.getFrameCount(), Math.max(0, clickedFrame));
+		int frame = HelperFunctions.clamp(clickedFrame, 0, musicData.getFrameCount());
 		audioPlayer.updateCurrentLocationByFrame(frame, true);
 		
 		dragging = true; //this is after audioPlayer.updateCurrentLocationByFrame (which will pause the audioPlayer, and try to continue from new location) because first time after mouse down we want it to flush the buffer, and second time not while dragging.
@@ -171,7 +172,7 @@ public class WaveformDrawer implements Panel {
 		
 		clickedFrame = (int) xCoordToFrame(e.getX() + 2);
 		
-		int frame = Math.min(musicData.getFrameCount(), Math.max(0, clickedFrame));
+		int frame = HelperFunctions.clamp(clickedFrame, 0, musicData.getFrameCount());
 		audioPlayer.updateCurrentLocationByFrame(frame, false);
 	}
 	
@@ -180,14 +181,14 @@ public class WaveformDrawer implements Panel {
 		double t = (frame - cam.getFirstSample()) / (double) sampleCount;
 		int xx = getWaveformX() + (int) (t * getWaveformAreaWidth());
 		
-		return Math.max(getWaveformX(), Math.min(getWaveformX() + getWaveformAreaWidth(), xx));
+		return HelperFunctions.clamp(xx, getWaveformX(), getWaveformX() + getWaveformAreaWidth());
 	}
 	
 	public int xCoordToFrame(int x) {
 		double t = (x - getWaveformX()) / (double) getWaveformAreaWidth();
 		int frame = getFrameByTValueInWaveArea(t);
 		
-		return (int) Math.max(0, Math.min(musicData.getFrameCount(), frame));
+		return HelperFunctions.clamp(frame, 0, musicData.getFrameCount());
 	}
 	
 	public void createWaveformImages() {
@@ -262,16 +263,6 @@ public class WaveformDrawer implements Panel {
 		//widthOffset = width - (xx - xOffset); //TODO: this was causing problems, see why it was there
 	}
 	
-	@Override
-	public int getWidth() {
-		return width;
-	}
-	
-	@Override
-	public int getHeight() {
-		return height;
-	}
-	
 	public int getWaveformX() {
 		return x + xOffset;
 	}
@@ -290,26 +281,6 @@ public class WaveformDrawer implements Panel {
 	public void setHeight(int height) {
 		this.height = height;
 		waveformChanged = true;
-	}
-	
-	@Override
-	public int getX() {
-		return x;
-	}
-	
-	@Override
-	public void setX(int x) {
-		this.x = x;
-	}
-	
-	@Override
-	public int getY() {
-		return y;
-	}
-	
-	@Override
-	public void setY(int y) {
-		this.y = y;
 	}
 
 	public boolean hover(MouseEvent e) {
