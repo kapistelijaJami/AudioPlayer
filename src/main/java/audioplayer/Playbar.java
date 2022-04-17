@@ -1,6 +1,7 @@
 package audioplayer;
 
-import uilibrary.RenderText.Alignment;
+import audiofilereader.MusicData;
+import uilibrary.enums.Alignment;
 import uilibrary.menu.Button;
 import uilibrary.menu.StringAlignment;
 import java.awt.Color;
@@ -9,32 +10,36 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import uilibrary.RenderText;
 
 //Current time, play, stop etc buttons. maybe other information
 public class Playbar {
 	private int x, y, width, height;
-	private Game game;
 	private List<Button> buttons = new ArrayList<>();
 	private Rectangle speedMultiplierSpace;
 	private int xMargin = 2;
 	private int yMargin = 2;
 	
-	public Playbar(int x, int y, int width, int height, Game game) {
+	private final MusicData musicData;
+	private final AudioPlayer audioPlayer;
+	
+	public Playbar(int x, int y, int width, int height, MusicData musicData, AudioPlayer audioPlayer, Consumer<Object> pause, Consumer<Object> stop) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
 		
-		this.game = game;
+		this.musicData = musicData;
+		this.audioPlayer = audioPlayer;
 		
 		int buttonHeight = height - yMargin * 2;
 		int buttonWidth = buttonHeight + 15;
 		
-		Button b = new Button(x + xMargin, y + yMargin, buttonWidth, buttonHeight, Color.GRAY, o -> game.togglePause());
+		Button b = new Button(x + xMargin, y + yMargin, buttonWidth, buttonHeight, Color.GRAY, pause);
 		b.addStringAlignment(new StringAlignment("Pause", Color.BLACK));
 		buttons.add(b);
-		b = new Button(x + xMargin + buttonWidth + xMargin, y + yMargin, buttonWidth, buttonHeight, Color.GRAY, o -> game.stopTheMusic());
+		b = new Button(x + xMargin + buttonWidth + xMargin, y + yMargin, buttonWidth, buttonHeight, Color.GRAY, stop);
 		b.addStringAlignment(new StringAlignment("Stop", Color.BLACK));
 		buttons.add(b);
 		
@@ -42,7 +47,7 @@ public class Playbar {
 	}
 	
 	public void update() {
-		if (game.audioPlayer.isPaused()) {
+		if (audioPlayer.isPaused()) {
 			buttons.get(0).setStringAlignment(new StringAlignment("Play", Color.BLACK));
 		} else {
 			buttons.get(0).setStringAlignment(new StringAlignment("Pause", Color.BLACK));
@@ -58,9 +63,9 @@ public class Playbar {
 		}
 		
 		g.setColor(Color.LIGHT_GRAY);
-		Rectangle neededSpace = RenderText.drawStringWithAlignment(g, (game.audioPlayer.currentSampleRateMultiplierPercent / 100.0) + "x", speedMultiplierSpace, null, Alignment.LEFT);
-		long currentMicros = Math.min(game.musicData.getDurationMicros(), Math.max(0, game.audioPlayer.getCurrentMicros()));
-		RenderText.drawStringWithAlignment(g, game.musicData.microsToDurationString(currentMicros) + " / " + game.musicData.microsToDurationString(game.musicData.getDurationMicros()), new Rectangle(neededSpace.x + neededSpace.width + 15, speedMultiplierSpace.y, speedMultiplierSpace.width, speedMultiplierSpace.height), null, Alignment.LEFT);
+		Rectangle neededSpace = RenderText.drawStringWithAlignment(g, (audioPlayer.currentSampleRateMultiplierPercent / 100.0) + "x", speedMultiplierSpace, null, Alignment.LEFT);
+		long currentMicros = Math.min(musicData.getDurationMicros(), Math.max(0, audioPlayer.getCurrentMicros()));
+		RenderText.drawStringWithAlignment(g, musicData.microsToDurationString(currentMicros) + " / " + musicData.microsToDurationString(musicData.getDurationMicros()), new Rectangle(neededSpace.x + neededSpace.width + 15, speedMultiplierSpace.y, speedMultiplierSpace.width, speedMultiplierSpace.height), null, Alignment.LEFT);
 	}
 	
 	public int getX() {

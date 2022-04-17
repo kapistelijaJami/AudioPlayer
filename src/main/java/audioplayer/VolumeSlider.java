@@ -1,6 +1,6 @@
 package audioplayer;
 
-import uilibrary.RenderText.Alignment;
+import uilibrary.enums.Alignment;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
@@ -13,16 +13,14 @@ import uilibrary.RenderText;
 public class VolumeSlider extends Panel {
 	private int currentVolumePercent;
 	private int yOffset = 20;
-	private Game game;
+	private AudioPlayer audioPlayer;
 	
 	private boolean dragging = false;
 	
-	public VolumeSlider(int x, int y, int width, int height, Game game) {
-		this.game = game;
-		this.x = x;
-		this.y = y;
-		this.width = width;
-		this.height = height;
+	public VolumeSlider(int x, int y, int width, int height, AudioPlayer audioPlayer) {
+		super(x, y, width, height);
+		
+		this.audioPlayer = audioPlayer;
 		currentVolumePercent = 50;
 	}
 	
@@ -39,9 +37,10 @@ public class VolumeSlider extends Panel {
 		currentVolumePercent = Math.min(200, Math.max(0, percent));
 		double volume = currentVolumePercent / 100.0f;
 		
-		game.setGainValue(20f * (float) Math.log10(volume));
+		audioPlayer.getGain().setValue(20f * (float) Math.log10(volume));
 	}
 	
+	@Override
 	public void render(Graphics2D g) {
 		g.setColor(Color.LIGHT_GRAY);
 		g.fillRect(x, y, width, height);

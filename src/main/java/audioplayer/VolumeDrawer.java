@@ -9,13 +9,12 @@ public class VolumeDrawer extends Panel {
 	private Game game;
 	
 	public VolumeDrawer(int x, int y, int width, int height, Game game) {
-		this.x = x;
-		this.y = y;
-		this.width = width;
-		this.height = height;
+		super(x, y, width, height);
+		
 		this.game = game;
 	}
 	
+	@Override
 	public void render(Graphics2D g) {
 		int h = height / 2;
 		

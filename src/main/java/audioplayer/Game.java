@@ -13,16 +13,15 @@ import java.awt.event.MouseWheelEvent;
 import lc.kra.system.mouse.GlobalMouseHook;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
 import uilibrary.Divider;
-import uilibrary.PanelContainer;
 import uilibrary.Window;
 
 public class Game implements Runnable {
 	public Window window;
 	public boolean running = true;
 	public static int FPS = 120;
-	public static int WIDTH = 1280;
-	public static int HEIGHT = 720;
-	public static boolean FULLSCREEN = false;
+	public static final int WIDTH = 1280;
+	public static final int HEIGHT = 720;
+	public static final boolean FULLSCREEN = false;
 	
 	public MusicData musicData;
 	public WaveformDrawer waveformDrawer;
@@ -38,6 +37,7 @@ public class Game implements Runnable {
 	
 	public Game(MusicData musicData) {
 		window = new Window(WIDTH, HEIGHT, "Waveform testi", 0, FULLSCREEN);
+		
 		this.musicData = musicData;
 		
 		int volumeDrawerHeight = 70;
@@ -49,17 +49,14 @@ public class Game implements Runnable {
 		waveformDrawer = new WaveformDrawer(0, 0, WIDTH - volumeSliderWidth, totalWaveFormHeight, musicData, audioPlayer);
 		volumeDrawer = new VolumeDrawer(0, 0, WIDTH - volumeSliderWidth, volumeDrawerHeight, this);
 		
-		//Horizontal divider
-		horizontalDivider = new Divider(totalWaveFormHeight, 5, 40, new PanelContainer(waveformDrawer), new PanelContainer(volumeDrawer), DividerOrientation.HORIZONTAL);
+		horizontalDivider = new Divider(totalWaveFormHeight, 5, 40, waveformDrawer, volumeDrawer, DividerOrientation.HORIZONTAL);
 		
 		
-		
-		volumeSlider = new VolumeSlider(0, 0, volumeSliderWidth, HEIGHT - playbarHeight, this);
-		//Vertical divider
-		verticalDivider = new Divider(horizontalDivider.getLength(), 5, volumeSliderWidth, new PanelContainer(horizontalDivider), new PanelContainer(volumeSlider), DividerOrientation.VERTICAL);
+		volumeSlider = new VolumeSlider(0, 0, volumeSliderWidth, HEIGHT - playbarHeight, audioPlayer);
+		verticalDivider = new Divider(horizontalDivider.getLength(), 5, volumeSliderWidth, horizontalDivider, volumeSlider, DividerOrientation.VERTICAL);
 		verticalDivider.setMovable(false);
 		
-		playbar = new Playbar(0, HEIGHT - playbarHeight, WIDTH, playbarHeight, this);
+		playbar = new Playbar(0, HEIGHT - playbarHeight, WIDTH, playbarHeight, musicData, audioPlayer, o -> this.togglePause(), o -> this.stopTheMusic());
 	}
 	
 	public void stop() {
@@ -81,11 +78,16 @@ public class Game implements Runnable {
 		GlobalMouseHook mouseHook = new GlobalMouseHook();
 		mouseHook.addMouseListener(input);
 		
-		audioPlayer.init();
+		//audioPlayer.init();
 		
 		volumeSlider.setVolume(20);
 		
 		new Thread(audioPlayer).start();
+		
+		if (FULLSCREEN) {
+			window.setFullscreen(false);
+			window.setFullscreen(true); //to resize elements if they werent loaded in time
+		}
 	}
 	
 	@Override
@@ -214,11 +216,11 @@ public class Game implements Runnable {
 		window.setCursor(cursor);
 	}
 	
-	public void MouseWheelMoved(MouseWheelEvent e) {
+	public void mouseWheelMoved(MouseWheelEvent e) {
 		if (e.isAltDown()) {
 			boolean changed = waveformDrawer.zoom(-e.getWheelRotation());
 			if (changed) {
-				waveformDrawer.waveformChanged = true;
+				waveformDrawer.setWaveformChanged(true);
 			}
 		} else {
 			volumeSlider.scroll(-e.getWheelRotation());
@@ -226,15 +228,11 @@ public class Game implements Runnable {
 	}
 	
 	public Point pointRelativeToWindow(Point p) {
-		Rectangle r = window.getBounds();
-		Insets inset = window.getInsets();
-		return new Point(p.x - r.x - inset.left, p.y - r.y - inset.top);
+		Rectangle r = window.getCanvasBounds();
+		return new Point(p.x - r.x, p.y - r.y);
 	}
 	
 	public void windowResized(int w, int h) {
-		WIDTH = w;
-		HEIGHT = h;
-		
 		if (horizontalDivider.dir == DividerOrientation.HORIZONTAL) {
 			horizontalDivider.setLength(w, false);
 			horizontalDivider.setMaxSpace(h - playbar.getHeight(), false);
@@ -257,8 +255,7 @@ public class Game implements Runnable {
 	}
 	
 	public void toggleFullscreen() {
-		FULLSCREEN = !FULLSCREEN;
-		window.setFullscreen(FULLSCREEN);
+		window.setFullscreen(!isFullscreen());
 		
 		
 		/*GraphicsDevice monitor = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()[0];
@@ -290,12 +287,8 @@ public class Game implements Runnable {
 	public void stopTheMusic() {
 		audioPlayer.stopTheMusic(waveformDrawer.getClickedFrame());
 	}
-	
-	public void backMilliSeconds(int ms) {
-		audioPlayer.setCurrentHEADByMicros(Math.max(0, audioPlayer.getCurrentMicros() - ms * 1000));
-	}
-	
-	public void forwardMilliSeconds(int ms) {
-		audioPlayer.setCurrentHEADByMicros(Math.max(0, audioPlayer.getCurrentMicros() + ms * 1000));
+
+	public boolean isFullscreen() {
+		return window.isFullscreen();
 	}
 }

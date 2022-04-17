@@ -12,8 +12,8 @@ import uilibrary.Panel;
 //TODO: Also for subtitle editor, create waveform where it's easier to see the parts where they talk. Mute the others etc for the render.
 public class WaveformDrawer extends Panel {
 	//private final Game game;
-	private final MusicData musicData;
-	private final AudioPlayer audioPlayer;
+	protected final MusicData musicData;
+	protected final AudioPlayer audioPlayer;
 	private final int xOffset = 5;
 	private int widthOffset = 10; //can change based on how big the waveform render was. Edit. doesnt change currently, it was buggy
 	
@@ -25,7 +25,7 @@ public class WaveformDrawer extends Panel {
 	private BufferedImage waveformRight;
 	
 	private boolean dragging = false;
-	public boolean waveformChanged = false;
+	private boolean waveformChanged = false;
 	private boolean rendering = false;
 	private boolean abortRender = false;
 	private Camera cam;
@@ -33,10 +33,8 @@ public class WaveformDrawer extends Panel {
 	private boolean mono = false;
 	
 	public WaveformDrawer(int x, int y, int width, int height, MusicData musicData, AudioPlayer audioPlayer) {
-		this.x = x;
-		this.y = y;
-		this.width = width;
-		this.height = height;
+		super(x, y, width, height);
+		
 		this.musicData = musicData;
 		this.audioPlayer = audioPlayer;
 		cam = new Camera();
@@ -49,6 +47,11 @@ public class WaveformDrawer extends Panel {
 		waveformChanged = true;
 	}
 	
+	public void setWaveformChanged(boolean b) {
+		this.waveformChanged = b;
+	}
+	
+	@Override
 	public void update() {
 		int frame = (int) audioPlayer.getCurrentFrame();
 		
@@ -63,6 +66,7 @@ public class WaveformDrawer extends Panel {
 		}
 	}
 	
+	@Override
 	public void render(Graphics2D g) {
 		int h = height / 2;
 		

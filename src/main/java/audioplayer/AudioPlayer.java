@@ -36,6 +36,7 @@ public class AudioPlayer implements Runnable {
 		audioLevel = new AudioLevel();
 		
 		latch = new CountDownLatch(1);
+		init();
 	}
 	
 	@Override
@@ -64,7 +65,7 @@ public class AudioPlayer implements Runnable {
 		return new AudioFormat(sampleRate, musicData.bitsPerSample, musicData.numberOfChannels, true, false);
 	}
 	
-	public void init() {
+	private void init() {
 		int sampleRate = (int) (musicData.sampleRate * (currentSampleRateMultiplierPercent / 100.0));
 		audioFormat = getAudioFormat(sampleRate);
 		
@@ -158,6 +159,10 @@ public class AudioPlayer implements Runnable {
 	
 	public void setCurrentHEADByMicros(long micros) {
 		currentHEAD = (int) musicData.microsToByteNumber(micros);
+	}
+	
+	public long getCurrentMillis() {
+		return musicData.frameToMillis(getCurrentFrame());
 	}
 	
 	public long getCurrentMicros() {
@@ -280,5 +285,13 @@ public class AudioPlayer implements Runnable {
 	
 	public boolean isPaused() {
 		return paused;
+	}
+	
+	public void backMilliSeconds(int ms) {
+		setCurrentHEADByMicros(Math.max(0, getCurrentMicros() - ms * 1000));
+	}
+	
+	public void forwardMilliSeconds(int ms) {
+		setCurrentHEADByMicros(Math.max(0, getCurrentMicros() + ms * 1000));
 	}
 }

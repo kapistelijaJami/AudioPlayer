@@ -55,7 +55,7 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 	
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		game.MouseWheelMoved(e);
+		game.mouseWheelMoved(e);
 	}
 	
 	@Override
@@ -113,24 +113,27 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 				game.toggleFullscreen();
 				break;
 			case KeyEvent.VK_ESCAPE:
-				game.stop();
+				if (game.isFullscreen()) {
+					game.toggleFullscreen();
+				} else {
+					game.stop();
+				}
 				break;
 			case KeyEvent.VK_SPACE:
 				game.togglePause();
 				break;
 			case KeyEvent.VK_LEFT:
-				game.backMilliSeconds(5000);
+				game.audioPlayer.backMilliSeconds(5000);
 				break;
 			case KeyEvent.VK_RIGHT:
-				game.forwardMilliSeconds(5000);
+				game.audioPlayer.forwardMilliSeconds(5000);
 				break;
 			case KeyEvent.VK_F:
-				game.audioPlayer.currentSampleRateMultiplierPercent = Math.min(400, Math.max(25, game.audioPlayer.currentSampleRateMultiplierPercent + 25));
+				game.audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(game.audioPlayer.currentSampleRateMultiplierPercent + 25, 25, 400);
 				game.audioPlayer.refreshAudioFormat();
 				break;
-				
 			case KeyEvent.VK_D:
-				game.audioPlayer.currentSampleRateMultiplierPercent = Math.min(400, Math.max(25, game.audioPlayer.currentSampleRateMultiplierPercent - 25));
+				game.audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(game.audioPlayer.currentSampleRateMultiplierPercent - 25, 25, 400);
 				game.audioPlayer.refreshAudioFormat();
 				break;
 			case KeyEvent.VK_ALT:
