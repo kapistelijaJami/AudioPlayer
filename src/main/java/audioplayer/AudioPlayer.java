@@ -3,6 +3,7 @@ package audioplayer;
 import audiofilereader.MusicData;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -27,16 +28,31 @@ public class AudioPlayer implements Runnable {
 	private int currentHEAD;
 	private CountDownLatch latch;
 	
-	public int currentSampleRateMultiplierPercent = 100;
+	private long lastCurrentHEADUpdateTime;
+	
+	public int currentSampleRateMultiplierPercent = 100; //How fast to play the audio file in percentage. 100 is 1x speed. 150 is 1.5x speed etc.
 	
 	private AudioLevel audioLevel;
 	
 	public AudioPlayer(MusicData musicData) {
 		this.musicData = musicData;
 		audioLevel = new AudioLevel();
-		
 		latch = new CountDownLatch(1);
+		
 		init();
+	}
+	
+	public void setMusicData(MusicData musicData) {
+		stop();
+		this.musicData = musicData;
+		currentHEAD = 0;
+		if (musicData == null) return;
+		
+		init();
+	}
+	
+	public MusicData getMusicData() {
+		return musicData;
 	}
 	
 	@Override
@@ -66,7 +82,8 @@ public class AudioPlayer implements Runnable {
 	}
 	
 	private void init() {
-		int sampleRate = (int) (musicData.sampleRate * (currentSampleRateMultiplierPercent / 100.0));
+		double speedMultiplier = getSpeedMultiplier();
+		int sampleRate = (int) (musicData.sampleRate * speedMultiplier);
 		audioFormat = getAudioFormat(sampleRate);
 		
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
@@ -76,24 +93,25 @@ public class AudioPlayer implements Runnable {
 			line = (SourceDataLine) AudioSystem.getLine(info);
 			line.addLineListener(new MyLineListener());
 			
-			//chunkSize = 512; //too low for some songs, 2k started to be fine for others too, but 8k is probably safe
-			chunkSize = (int) (musicData.microsToByteNumber((long) (45 * 1000 * (currentSampleRateMultiplierPercent / 100.0)))); //def: 45ms. This makes it relative to the sampleRate. About 8k for 44.1kHz
-			//chunkSize = 8192;  //8192 and other 8192 * 3 seems relly good for responsiveness and quality. But dragging without flushing buffer makes it update the location really slow if sample rate is low.
-			int lineBufferSize = chunkSize * 3; //was chunkSize * 32, but made some stuff very delayed, tried same as chunk size, but it sometimes skipped, or lagged a bit. * 2 was skipping sometimes in nightcore. * 3 is the way.
+			//chunkSize explanations:
+			//chunkSize is how much at a time we write to the line buffer.
+			//512 was too low for some songs, 2k started to be fine for others too, but 8k is probably safe
+			//8192 and lineBufferSize 8192 * 3 seems relly good for responsiveness and quality.
+			//But dragging without flushing buffer makes it update the location really slow if sample rate is low, so make it depend on the sampleRate, or use milliseconds to calculate.
 			
-			line.open(audioFormat, lineBufferSize); //tää on bufferikoko linelle miten paljon dataa sinne voi kerralla mahduttaa. Tän ainakin pitää olla vähän isompi. Varmaan tärkein on olla suhteessa tietyn verran isompi kun chunkSize.
+			chunkSize = (int) (musicData.microsToByteNumber((long) (45 * 1000 * speedMultiplier))); //def: 45ms. This makes it relative to the sampleRate. About 8k for 44.1kHz. (secs * sampleRate * bytesPerFrame = 0.045 * 44100 * 4 = 7938)
+			
+			int lineBufferSize = chunkSize * 3; //was chunkSize * 32, but made some stuff very delayed, tried same as chunk size, but it sometimes skipped, or lagged a bit. * 2 was skipping sometimes in nightcore. * 3 is the way.
+			line.open(audioFormat, lineBufferSize); //this is buffer size for line, how much data can you fit at once. This has to be at least a bit bigger than chunkSize. Probably should be couple times bigger in relation to chunkSize.
 			
 			gain = (FloatControl) line.getControl(FloatControl.Type.MASTER_GAIN);
-			
-			
-			//setCurrentHEADByMicros((long) (0 * 1e6));
 		} catch (LineUnavailableException e) {
 			System.out.println(e.getMessage());
 		}
 	}
 	
 	private void stop() {
-		line.drain();
+		line.flush();
 		line.stop();
 		stopped = true;
 	}
@@ -104,8 +122,13 @@ public class AudioPlayer implements Runnable {
 		line.close();
 	}
 	
+	/**
+	 * Line is literally playing the music right now.
+	 * It is reading or writing from the buffer.
+	 * @return 
+	 */
 	public boolean isActive() {
-		return line.isActive(); //line is literally playing the music right now. It is reading or writing from the buffer
+		return line.isActive();
 	}
 	
 	private void start() {
@@ -125,7 +148,8 @@ public class AudioPlayer implements Runnable {
 			int written = line.write(buf, 0, buf.length);
 			
 			if (!paused) {
-				currentHEAD += written;
+				lastCurrentHEADUpdateTime = System.currentTimeMillis();
+				currentHEAD += written; //this sometimes (like once a second) happens twice before waveformDrawer has had time to render current time once so the line jumps a bit.
 			}
 		}
 		
@@ -157,10 +181,6 @@ public class AudioPlayer implements Runnable {
 		return audioLevel;
 	}
 	
-	public void setCurrentHEADByMicros(long micros) {
-		currentHEAD = (int) musicData.microsToByteNumber(micros);
-	}
-	
 	public long getCurrentMillis() {
 		return musicData.frameToMillis(getCurrentFrame());
 	}
@@ -174,7 +194,14 @@ public class AudioPlayer implements Runnable {
 			return musicData.bytesToFrameNumber(currentHEAD);
 		}
 		
-		return musicData.bytesToFrameNumber(currentHEAD - line.getBufferSize() / 2);
+		int currentByte = currentHEAD + (int) musicData.millisToByteNumber((long) ((System.currentTimeMillis() - lastCurrentHEADUpdateTime) * getSpeedMultiplier())); //to move more smoothly
+		
+		return musicData.bytesToFrameNumber(currentByte - line.getBufferSize() / 2);
+	}
+	
+	public void setCurrentTimeByMicros(long micros) {
+		int frame = musicData.microsToFrameNumber(micros);
+		updateCurrentLocationByFrame(frame);
 	}
 	
 	public void updateCurrentLocationByFrame(int frame) {
@@ -211,12 +238,12 @@ public class AudioPlayer implements Runnable {
 	//Returns the current audio volume between 0 and 1
 	public double getLevelLeft() {
 		int frameCount = musicData.millisToFrameNumber(audioLevel.updateInterval); //100ms in frames
-		return getLevel(musicData.getSamplesChannel(true, getCurrentFrame() - frameCount, frameCount * 2));
+		return getLevel(musicData.getSamplesByChannel(true, getCurrentFrame() - frameCount, frameCount * 2));
 	}
 	
 	public double getLevelRight() {
 		int frameCount = musicData.millisToFrameNumber(audioLevel.updateInterval); //100ms in frames
-		return getLevel(musicData.getSamplesChannel(false, getCurrentFrame() - frameCount, frameCount * 2));
+		return getLevel(musicData.getSamplesByChannel(false, getCurrentFrame() - frameCount, frameCount * 2));
 	}
 	
 	private double getLevel(short[] samples) {
@@ -261,37 +288,62 @@ public class AudioPlayer implements Runnable {
 	}
 
 	public void togglePause() {
-		if (!paused) {
-			line.flush();
-			paused = true;
-		} else {
+		if (paused) {
 			if (!line.isRunning()) {
 				start();
 			}
 			paused = false;
 			latch.countDown();
+		} else {
+			line.flush();
+			paused = true;
 		}
 	}
 	
-	public void stopTheMusic(int continueFrame) { //continueFrame is used for resetting location to last clicked point, or to start
+	public void pause() {
+		if (!paused) {
+			togglePause();
+		}
+	}
+	
+	public void unpause() {
+		if (paused) {
+			togglePause();
+		}
+	}
+	
+	/**
+	 * Stops the music.
+	 * Resets the next playback point to continueFrame
+	 * @param continueFrame Is used for resetting location to last clicked point, or to start
+	 */
+	public void stopTheMusic(int continueFrame) {
 		if (!stopped) {
-			if (!paused) {
-				togglePause();
-			}
+			pause();
 			stop();
 			updateCurrentLocationByFrame(continueFrame);
 		}
 	}
 	
+	/**
+	 * AudioPlayer is paused.
+	 * It might still be emptying it's buffer and playing it, but either it's already stopped,
+	 * or it will be completely stopped in couple milliseconds.
+	 * @return 
+	 */
 	public boolean isPaused() {
 		return paused;
 	}
 	
 	public void backMilliSeconds(int ms) {
-		setCurrentHEADByMicros(Math.max(0, getCurrentMicros() - ms * 1000));
+		setCurrentTimeByMicros(Math.max(0, getCurrentMicros() - ms * 1000));
 	}
 	
 	public void forwardMilliSeconds(int ms) {
-		setCurrentHEADByMicros(Math.max(0, getCurrentMicros() + ms * 1000));
+		setCurrentTimeByMicros(Math.max(0, getCurrentMicros() + ms * 1000));
+	}
+	
+	public double getSpeedMultiplier() {
+		return currentSampleRateMultiplierPercent / 100.0;
 	}
 }

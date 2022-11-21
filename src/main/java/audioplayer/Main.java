@@ -25,7 +25,7 @@ public class Main {
 		AudioFileReader audioReader = new AudioFileReader();
 		MusicData musicData = audioReader.read(file);
 		
-		Game game = new Game(musicData);
-		new Thread(game).start();
+		AudioPlayerGUI audioPlayer = new AudioPlayerGUI(musicData);
+		new Thread(audioPlayer).start();
 	}
 }

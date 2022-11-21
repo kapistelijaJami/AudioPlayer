@@ -12,9 +12,9 @@ import lc.kra.system.mouse.event.GlobalMouseEvent;
 import lc.kra.system.mouse.event.GlobalMouseListener;
 
 public class Input implements MouseInputListener, MouseWheelListener, KeyListener, GlobalMouseListener, ComponentListener {
-	private Game game;
+	private AudioPlayerGUI game;
 	
-	public Input(Game game) {
+	public Input(AudioPlayerGUI game) {
 		this.game = game;
 	}
 	

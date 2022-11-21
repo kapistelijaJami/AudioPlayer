@@ -6,9 +6,9 @@ import uilibrary.Panel;
 
 public class VolumeDrawer extends Panel {
 	public double volumeLeft, volumeRight;
-	private Game game;
+	private AudioPlayerGUI game;
 	
-	public VolumeDrawer(int x, int y, int width, int height, Game game) {
+	public VolumeDrawer(int x, int y, int width, int height, AudioPlayerGUI game) {
 		super(x, y, width, height);
 		
 		this.game = game;
