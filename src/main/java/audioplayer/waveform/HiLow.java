@@ -1,4 +1,4 @@
-package audioplayer;
+package audioplayer.waveform;
 
 public class HiLow {
 	public short h, l;

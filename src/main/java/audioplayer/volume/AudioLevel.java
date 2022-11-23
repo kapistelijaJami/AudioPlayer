@@ -1,4 +1,4 @@
-package audioplayer;
+package audioplayer.volume;
 
 public class AudioLevel {
 	private double levelLeft;

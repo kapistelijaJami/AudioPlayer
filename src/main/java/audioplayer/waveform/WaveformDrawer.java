@@ -1,11 +1,14 @@
-package audioplayer;
+package audioplayer.waveform;
 
 import audiofilereader.MusicData;
+import audioplayer.audio.AudioPlayer;
+import audioplayer.HelperFunctions;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import javax.swing.SwingUtilities;
 import uilibrary.Panel;
 
 //TODO: try to optimize the waveform with longer audios more. (with over 1h wav files it's pretty laggy)
@@ -191,6 +194,15 @@ public class WaveformDrawer extends Panel {
 			return;
 		}
 		
+		if (SwingUtilities.isMiddleMouseButton(e)) {
+			if (isInside(e.getX(), e.getY())) {
+				audioPlayer.togglePause();
+				return;
+			}
+		} else if (SwingUtilities.isRightMouseButton(e)) {
+			return;
+		}
+		
 		setPlayStartFrameWithCoords(e.getX(), e.getY());
 		
 		int frame = HelperFunctions.clamp(playStartFrame, 0, audioPlayer.getMusicData().getFrameCount());
@@ -199,6 +211,10 @@ public class WaveformDrawer extends Panel {
 	
 	public void mouseDragged(MouseEvent e) {
 		if (!isInside(e.getX(), e.getY())) {
+			return;
+		}
+		
+		if (SwingUtilities.isMiddleMouseButton(e) || SwingUtilities.isRightMouseButton(e)) {
 			return;
 		}
 		
@@ -359,6 +375,6 @@ public class WaveformDrawer extends Panel {
 	
 	public void resetZoom() {
 		cam.setZoom(1);
-		cam.setFirstSample(0, audioPlayer.getMusicData());
+		cam.resetFirstSample();
 	}
 }

@@ -1,5 +1,6 @@
 package audioplayer;
 
+import audioplayer.audio.AudioPlayer;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
@@ -12,10 +13,10 @@ import lc.kra.system.mouse.event.GlobalMouseEvent;
 import lc.kra.system.mouse.event.GlobalMouseListener;
 
 public class Input implements MouseInputListener, MouseWheelListener, KeyListener, GlobalMouseListener, ComponentListener {
-	private AudioPlayerGUI game;
+	private AudioPlayerGUI gui;
 	
 	public Input(AudioPlayerGUI game) {
-		this.game = game;
+		this.gui = game;
 	}
 	
 	@Override
@@ -25,12 +26,12 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 	
 	@Override
 	public void mousePressed(MouseEvent e) {
-		game.mousePressed(e);
+		gui.mousePressed(e);
 	}
 	
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		game.mouseReleased(e);
+		gui.mouseReleased(e);
 	}
 	
 	@Override
@@ -45,17 +46,17 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 	
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		game.mouseDragged(e);
+		gui.mouseDragged(e);
 	}
 	
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		game.mouseMoved(e);
+		gui.mouseMoved(e);
 	}
 	
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
-		game.mouseWheelMoved(e);
+		gui.mouseWheelMoved(e);
 	}
 	
 	@Override
@@ -70,7 +71,7 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 	
 	@Override
 	public void mouseMoved(GlobalMouseEvent event) {
-		game.mouseMoved(event);
+		gui.mouseMoved(event);
 	}
 	
 	@Override
@@ -82,7 +83,7 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 	public void componentResized(ComponentEvent e) {
 		int w = e.getComponent().getWidth();
 		int h = e.getComponent().getHeight();
-		game.windowResized(w, h);
+		gui.windowResized(w, h);
 	}
 
 	@Override
@@ -107,34 +108,36 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 
 	@Override
 	public void keyPressed(KeyEvent e) {
+		AudioPlayer audioPlayer = gui.getAudioPlayer();
+		
 		int key = e.getKeyCode();
 		switch (key) {
 			case KeyEvent.VK_F11:
-				game.toggleFullscreen();
+				gui.toggleFullscreen();
 				break;
 			case KeyEvent.VK_ESCAPE:
-				if (game.isFullscreen()) {
-					game.toggleFullscreen();
+				if (gui.isFullscreen()) {
+					gui.toggleFullscreen();
 				} else {
-					game.stop();
+					gui.stop();
 				}
 				break;
 			case KeyEvent.VK_SPACE:
-				game.togglePause();
+				gui.togglePause();
 				break;
 			case KeyEvent.VK_LEFT:
-				game.audioPlayer.backMilliSeconds(5000);
+				audioPlayer.backMilliSeconds(5000);
 				break;
 			case KeyEvent.VK_RIGHT:
-				game.audioPlayer.forwardMilliSeconds(5000);
+				audioPlayer.forwardMilliSeconds(5000);
 				break;
 			case KeyEvent.VK_F:
-				game.audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(game.audioPlayer.currentSampleRateMultiplierPercent + 25, 25, 400);
-				game.audioPlayer.refreshAudioFormat();
+				audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(audioPlayer.currentSampleRateMultiplierPercent + 25, 25, 400);
+				audioPlayer.refreshAudioFormat();
 				break;
 			case KeyEvent.VK_D:
-				game.audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(game.audioPlayer.currentSampleRateMultiplierPercent - 25, 25, 400);
-				game.audioPlayer.refreshAudioFormat();
+				audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(audioPlayer.currentSampleRateMultiplierPercent - 25, 25, 400);
+				audioPlayer.refreshAudioFormat();
 				break;
 			case KeyEvent.VK_ALT:
 				e.consume(); //makes alt not do anything it would do normally (like unfocus the window, and change the cursor).

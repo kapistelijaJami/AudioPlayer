@@ -9,23 +9,28 @@ import java.io.File;
 public class Main {
 	public static void main(String[] args) {
 		
-		File file = new File("Staintune - Misery Business.wav");
-		//File file = new File("Primer.wav");
-		//File file = new File("Staintune - For A Pessimist, I'm Pretty Optimistic.wav");
-		//File file = new File("file_example_WAV_1MG.wav");
-		//File file = new File("08 - Kuutamohullu.wav");
-		//File file = new File("02 - Mullonikäväsua.wav");
-		//File file = new File("01 - Nokian takana.wav");
-		//File file = new File("Clocks synthetized.wav");
+		File file = null;
+		
+		file = new File("Staintune - Misery Business.wav");
+		//file = new File("Primer.wav");
+		//file = new File("Staintune - For A Pessimist, I'm Pretty Optimistic.wav");
+		//file = new File("file_example_WAV_1MG.wav");
+		//file = new File("08 - Kuutamohullu.wav");
+		//file = new File("02 - Mullonikäväsua.wav");
+		//file = new File("01 - Nokian takana.wav");
+		//file = new File("Clocks synthetized.wav");
 		
 		if (args.length != 0) {
 			file = new File(args[0]);
 		}
 		
-		AudioFileReader audioReader = new AudioFileReader();
-		MusicData musicData = audioReader.read(file);
+		//fully my implementation, other one covers way more formats
+		/*AudioFileReader audioReader = new AudioFileReader();
+		MusicData musicData = audioReader.read(file);*/
+		
+		MusicData musicData = MusicData.createMusicData(file);
 		
 		AudioPlayerGUI audioPlayer = new AudioPlayerGUI(musicData);
-		new Thread(audioPlayer).start();
+		audioPlayer.start();
 	}
 }

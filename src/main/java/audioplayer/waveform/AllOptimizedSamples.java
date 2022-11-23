@@ -1,5 +1,6 @@
-package audioplayer;
+package audioplayer.waveform;
 
+import audioplayer.waveform.OptimizedSamples;
 import java.util.ArrayList;
 import java.util.List;
 

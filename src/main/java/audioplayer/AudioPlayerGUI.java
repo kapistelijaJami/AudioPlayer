@@ -1,13 +1,18 @@
 package audioplayer;
 
+import audioplayer.audio.AudioPlayer;
+import audioplayer.ui.Playbar;
+import audioplayer.waveform.WaveformDrawer;
+import audioplayer.volume.VolumeDrawer;
+import audioplayer.volume.VolumeSlider;
 import audiofilereader.MusicData;
+import audioplayer.ui.LoadingBox;
 import java.awt.Canvas;
 import java.awt.Color;
 import uilibrary.enums.DividerOrientation;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
@@ -18,52 +23,68 @@ import lc.kra.system.mouse.GlobalMouseHook;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
 import uilibrary.Divider;
 import uilibrary.DragAndDrop;
+import uilibrary.GameLoop;
 import uilibrary.RenderMultilineText;
 import uilibrary.Window;
 import uilibrary.thread.ThreadExecutor;
 
-public class AudioPlayerGUI implements Runnable {
-	public Window window;
-	public boolean running = true;
-	public static int FPS = 120;
-	public static final int WIDTH = 1280;
-	public static final int HEIGHT = 720;
-	public static final boolean FULLSCREEN = false;
+public class AudioPlayerGUI extends GameLoop { //TODO: add music playlist, and visual playtime in bottom windows bar like in potplayer
+	private enum State {
+		NORMAL, NO_AUDIO, LOADING; //no audio, means you can't use musicData, loading means the same, but it should render a loading box.
+		
+		public boolean canPlayAudio() {
+			return this == NORMAL;
+		}
+	}
 	
-	public WaveformDrawer waveformDrawer;
-	public VolumeDrawer volumeDrawer;
-	public Divider horizontalDivider;
-	public Divider verticalDivider;
-	public VolumeSlider volumeSlider;
-	public Playbar playbar;
+	private Window window;
 	
-	private boolean unlimitedFPS = true;
+	private WaveformDrawer waveformDrawer;
+	private VolumeDrawer volumeDrawer;
+	private Divider horizontalDivider;
+	private Divider verticalDivider;
+	private VolumeSlider volumeSlider;
+	private Playbar playbar;
 	
-	public AudioPlayer audioPlayer;
+	private AudioPlayer audioPlayer;
 	
 	private File updateAudioFile = null;
-	private boolean LOADING = false;
+	private State state = State.NORMAL;
+	
+	private static final String TITLE = "Audio Player";
+	
+	public AudioPlayerGUI() {
+		this(null);
+	}
 	
 	public AudioPlayerGUI(MusicData musicData) {
-		window = new Window(WIDTH, HEIGHT, "Audio Player", 0, FULLSCREEN);
+		super(Constants.FPS);
+		
+		window = new Window(Constants.WIDTH, Constants.HEIGHT, "Audio Player", 0, Constants.FULLSCREEN);
+		window.setCanvasBackground(Color.LIGHT_GRAY); //so that waveformDrawer isn't completely black when state is LOADING.
+		
+		if (musicData == null) {
+			state = State.NO_AUDIO;
+		}
 		
 		int volumeDrawerHeight = 70;
 		int playbarHeight = 50;
-		int totalWaveFormHeight = HEIGHT - volumeDrawerHeight - playbarHeight;
+		int totalWaveFormHeight = window.getCanvasHeight() - volumeDrawerHeight - playbarHeight;
 		int volumeSliderWidth = 100;
 		
-		audioPlayer = new AudioPlayer(musicData);
-		waveformDrawer = new WaveformDrawer(0, 0, WIDTH - volumeSliderWidth, totalWaveFormHeight, audioPlayer);
-		volumeDrawer = new VolumeDrawer(0, 0, WIDTH - volumeSliderWidth, volumeDrawerHeight, this);
+		
+		audioPlayer = new AudioPlayer(musicData, !state.canPlayAudio());
+		waveformDrawer = new WaveformDrawer(0, 0, window.getCanvasWidth() - volumeSliderWidth, totalWaveFormHeight, audioPlayer);
+		volumeDrawer = new VolumeDrawer(0, 0, window.getCanvasWidth() - volumeSliderWidth, volumeDrawerHeight, this);
 		
 		horizontalDivider = new Divider(totalWaveFormHeight, 5, 40, waveformDrawer, volumeDrawer, DividerOrientation.HORIZONTAL);
 		
 		
-		volumeSlider = new VolumeSlider(0, 0, volumeSliderWidth, HEIGHT - playbarHeight, audioPlayer);
+		volumeSlider = new VolumeSlider(0, 0, volumeSliderWidth, window.getCanvasHeight() - playbarHeight, audioPlayer);
 		verticalDivider = new Divider(horizontalDivider.getLength(), 5, volumeSliderWidth, horizontalDivider, volumeSlider, DividerOrientation.VERTICAL);
 		verticalDivider.setMovable(false);
 		
-		playbar = new Playbar(0, HEIGHT - playbarHeight, WIDTH, playbarHeight, audioPlayer, waveformDrawer, o -> this.togglePause(), o -> this.stopTheMusic());
+		playbar = new Playbar(0, window.getCanvasHeight() - playbarHeight, window.getCanvasWidth(), playbarHeight, audioPlayer, waveformDrawer, o -> this.togglePause(), o -> this.stopTheMusic());
 	}
 	
 	public boolean openFile(List<File> fileList) {
@@ -77,15 +98,13 @@ public class AudioPlayerGUI implements Runnable {
 
 		updateAudioFile = file;
 		
+		window.focus();
+		
 		return true;
 	}
 	
-	public void stop() {
-		running = false;
-		System.exit(0);
-	}
-	
-	private void init() {
+	@Override
+	protected void init() {
 		Input input = new Input(this);
 		Canvas canvas = window.getCanvas();
 		canvas.addMouseListener(input);
@@ -94,99 +113,63 @@ public class AudioPlayerGUI implements Runnable {
 		canvas.addComponentListener(input);
 		canvas.addKeyListener(input);
 		
-		//window.getFrame().addComponentListener(input);
 		
 		window.setTransferHandler(new DragAndDrop(this::openFile));
 		
 		GlobalMouseHook mouseHook = new GlobalMouseHook();
 		mouseHook.addMouseListener(input);
 		
-		//audioPlayer.init();
-		
 		volumeSlider.setVolume(20);
 		
 		new Thread(audioPlayer).start();
 		
-		if (FULLSCREEN) {
+		if (Constants.FULLSCREEN) {
 			window.setFullscreen(false);
 			window.setFullscreen(true); //to resize elements if they werent loaded in time
 		}
 	}
 	
 	@Override
-	public void run() {
-		init();
-		window.getCanvas().requestFocus();
-		
-		long now = System.nanoTime();
-		long nsBetweenFrames = (long) (1e9 / (unlimitedFPS ? 30000 : FPS));
-		
-		long time = System.currentTimeMillis();
-		int frames = 0;
-		
-		while (running) {
-			if (now + nsBetweenFrames <= System.nanoTime()) {
-				now += nsBetweenFrames;
-				update();
-				render();
-				frames++;
-				
-				if (time + 1000 < System.currentTimeMillis()) {
-					time += 1000;
-					window.setTitle("Audio Player fps: " + frames);
-					frames = 0;
-				}
-			}
-		}
-		window.close();
+	protected void lazyUpdate(int fps) {
+		String fileName = audioPlayer.getMusicData().filename;
+		window.setTitle(TITLE + " " + fileName + " fps: " + fps);
 	}
 	
+	@Override
+	protected void shutdown() {
+		window.close();
+		super.shutdown();
+	}
+	
+	@Override
 	public void update() {
-		if (LOADING) {
-			return;
-		}
-		if (updateAudioFile != null) {
+		if (state != State.LOADING && updateAudioFile != null) {
 			updateAudioFile();
 			return;
 		}
 		
-		audioPlayer.update();
-		waveformDrawer.update();
+		audioPlayer.update(); //TODO: see why this throws nullptr without if
+		if (state.canPlayAudio()) waveformDrawer.update();
 		horizontalDivider.update();
 		verticalDivider.update();
 		
 		playbar.update();
 	}
 	
+	@Override
 	public void render() {
 		Graphics2D g = window.getGraphics2D();
 		
-		if (!LOADING) waveformDrawer.render(g);
+		if (state.canPlayAudio()) waveformDrawer.render(g);
 		volumeDrawer.render(g);
 		horizontalDivider.render(g);
 		volumeSlider.render(g);
 		verticalDivider.render(g);
-		playbar.render(g, LOADING);
+		playbar.render(g, state.canPlayAudio());
 		
-		if (LOADING) renderLoadingBox(g);
+		if (state == State.LOADING) LoadingBox.renderLoadingBox(g, waveformDrawer.getBounds(), MusicData.CONVERT_PROGRESS);
 		
 		window.display(g);
-	}
-	
-	private void renderLoadingBox(Graphics2D g) {
-		Rectangle bounds = waveformDrawer.getBounds();
-		Dimension size = new Dimension(250, 150);
-		int x = bounds.x + (bounds.width - size.width) / 2;
-		int y = bounds.y + (bounds.height - size.height) / 2;
-		
-		g.setColor(Color.DARK_GRAY);
-		g.fillRect(x - 3, y - 3, size.width + 6, size.height + 6);
-		
-		g.setColor(Color.GRAY);
-		g.fillRect(x, y, size.width, size.height);
-		
-		g.setColor(Color.BLACK);
-		RenderMultilineText.drawMultilineText(g, "LOADING...", null, new Rectangle(x, y, size.width, size.height), false);
 	}
 	
 	public void mousePressed(MouseEvent e) {
@@ -302,17 +285,6 @@ public class AudioPlayerGUI implements Runnable {
 	
 	public void toggleFullscreen() {
 		window.setFullscreen(!isFullscreen());
-		
-		
-		/*GraphicsDevice monitor = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()[0];
-		Rectangle bounds = monitor.getDefaultConfiguration().getBounds();*/
-		
-		/*Rectangle screen = */
-		/*System.out.println(screen.x + " " + screen.y);
-		window.setFullscreen(this, screen.x, screen.y, FULLSCREEN);*/
-		//windowResized(bounds.width, bounds.height); //might not be necessary
-		
-		window.getCanvas().requestFocus();
 	}
 	
 	public void setGainValue(float value) {
@@ -320,6 +292,10 @@ public class AudioPlayerGUI implements Runnable {
 			return;
 		}
 		audioPlayer.getGain().setValue(value);
+	}
+	
+	public AudioPlayer getAudioPlayer() {
+		return audioPlayer;
 	}
 	
 	public int getVolume() {
@@ -340,7 +316,7 @@ public class AudioPlayerGUI implements Runnable {
 
 	private void updateAudioFile() {
 		if (updateAudioFile == null) return;
-		LOADING = true; //has to put here so it doesn't go inside any of the methods right after this
+		state = State.LOADING; //has to put here so it doesn't go inside any of the methods right after this
 		new ThreadExecutor(o -> updateAudioFileTask(updateAudioFile)).start();
 	}
 	
@@ -355,11 +331,14 @@ public class AudioPlayerGUI implements Runnable {
 		MusicData musicData = MusicData.createMusicData(file);
 		audioPlayer.setMusicData(musicData);
 		playbar.update();
+		volumeSlider.reapplyVolume();
 		
 		audioPlayer.unpause();
 		
 		System.out.println("");
 		updateAudioFile = null;
-		LOADING = false;
+		
+		window.focus();
+		state = State.NORMAL;
 	}
 }

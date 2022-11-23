@@ -1,4 +1,4 @@
-package audioplayer;
+package audioplayer.waveform;
 
 import audiofilereader.MusicData;
 
@@ -21,6 +21,10 @@ public class Camera {
 	
 	public void setFirstSample(int firstSample, MusicData musicData) {
 		this.firstSample = (int) Math.max(0, Math.min(musicData.getFrameCount() - getSampleCount(musicData), firstSample));
+	}
+	
+	public void resetFirstSample() {
+		this.firstSample = 0;
 	}
 	
 	public double zoom(int amount) {

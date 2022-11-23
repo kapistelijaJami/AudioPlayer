@@ -1,5 +1,7 @@
-package audioplayer;
+package audioplayer.volume;
 
+import audioplayer.audio.AudioPlayer;
+import audioplayer.HelperFunctions;
 import uilibrary.enums.Alignment;
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -11,33 +13,26 @@ import uilibrary.Panel;
 import uilibrary.RenderText;
 
 public class VolumeSlider extends Panel {
-	private int currentVolumePercent;
+	private VolumeController volumeController;
 	private int yOffset = 20;
-	private AudioPlayer audioPlayer;
-	
 	private boolean dragging = false;
 	
 	public VolumeSlider(int x, int y, int width, int height, AudioPlayer audioPlayer) {
 		super(x, y, width, height);
 		
-		this.audioPlayer = audioPlayer;
-		currentVolumePercent = 50;
+		volumeController = new VolumeController(audioPlayer);
 	}
 	
+	/**
+	 * Change volume by little bit with scroll.
+	 * @param scrollDirection Should be -e.getWheelRotation()
+	 */
 	public void scroll(int scrollDirection) {
-		setVolume(nextVolumePercent(currentVolumePercent, scrollDirection));
-	}
-	
-	private static int nextVolumePercent(int prev, int dir) {
-		int multiplier = prev + dir <= 5 ? 1 : 5;
-		return prev + (dir * multiplier);
+		volumeController.scroll(scrollDirection);
 	}
 	
 	public void setVolume(int percent) {
-		currentVolumePercent = Math.min(200, Math.max(0, percent));
-		double volume = currentVolumePercent / 100.0f;
-		
-		audioPlayer.getGain().setValue(20f * (float) Math.log10(volume));
+		volumeController.setVolume(percent);
 	}
 	
 	@Override
@@ -101,7 +96,7 @@ public class VolumeSlider extends Panel {
 	}
 	
 	private Rectangle getButtonHitbox() {
-		int centerPoint = (int) (height - yOffset - (currentVolumePercent / 200.0) * (height - yOffset * 2));
+		int centerPoint = (int) (height - yOffset - (volumeController.getCurrentVolumePercent() / 200.0) * (height - yOffset * 2));
 		int w = 21;
 		int h = 11;
 		return new Rectangle(getMidLineX() - w/2, centerPoint - h/2, w, h);
@@ -116,7 +111,11 @@ public class VolumeSlider extends Panel {
 	}
 	
 	public int getCurrentVolumePercent() {
-		return currentVolumePercent;
+		return volumeController.getCurrentVolumePercent();
+	}
+	
+	public void reapplyVolume() {
+		volumeController.reapplyVolume();
 	}
 
 	public boolean hover(MouseEvent e) {
@@ -160,7 +159,7 @@ public class VolumeSlider extends Panel {
 			} else {
 				break;
 			}
-			vol = nextVolumePercent(vol, 1);
+			vol = VolumeController.nextVolumePercent(vol, 1);
 		}
 		return closest;
 	}

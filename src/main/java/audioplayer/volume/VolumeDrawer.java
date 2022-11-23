@@ -1,5 +1,6 @@
-package audioplayer;
+package audioplayer.volume;
 
+import audioplayer.AudioPlayerGUI;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import uilibrary.Panel;
@@ -18,8 +19,8 @@ public class VolumeDrawer extends Panel {
 	public void render(Graphics2D g) {
 		int h = height / 2;
 		
-		renderVolume(g, game.audioPlayer.getAudioLevel().getLeft(), 0, h);
-		renderVolume(g, game.audioPlayer.getAudioLevel().getRight(), h, h);
+		renderVolume(g, game.getAudioPlayer().getAudioLevel().getLeft(), 0, h);
+		renderVolume(g, game.getAudioPlayer().getAudioLevel().getRight(), h, h);
 		
 		g.setColor(Color.BLACK);
 		g.drawLine(x, y + h, width, y + h);

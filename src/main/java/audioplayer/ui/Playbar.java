@@ -1,6 +1,8 @@
-package audioplayer;
+package audioplayer.ui;
 
+import audioplayer.waveform.WaveformDrawer;
 import audiofilereader.MusicData;
+import audioplayer.audio.AudioPlayer;
 import uilibrary.enums.Alignment;
 import uilibrary.menu.Button;
 import uilibrary.menu.StringAlignment;
@@ -48,7 +50,7 @@ public class Playbar {
 		speedMultiplierSpace = new Rectangle(x + xMargin * 3 + buttonWidth * 3 + 10, y + yMargin, buttonWidth, buttonHeight);
 	}
 	
-	public void render(Graphics2D g, boolean LOADING) {
+	public void render(Graphics2D g, boolean canPlayAudio) {
 		g.setColor(new Color(25, 25, 25));
 		g.fillRect(x, y, width, height);
 		
@@ -62,7 +64,7 @@ public class Playbar {
 		
 		String timeDurationString = "";
 		
-		if (!LOADING) {
+		if (canPlayAudio) {
 			MusicData musicData = audioPlayer.getMusicData();
 			long currentMicros = Math.min(musicData.getDurationMicros(), Math.max(0, audioPlayer.getCurrentMicros()));
 			timeDurationString = musicData.microsToDurationString(currentMicros) + " / " + musicData.microsToDurationString(musicData.getDurationMicros());

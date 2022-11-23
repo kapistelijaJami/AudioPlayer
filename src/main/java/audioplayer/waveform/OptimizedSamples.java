@@ -1,4 +1,4 @@
-package audioplayer;
+package audioplayer.waveform;
 
 public class OptimizedSamples {
 	public HiLow[] optimizedSamplesLeft;

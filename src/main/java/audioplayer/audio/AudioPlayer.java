@@ -1,6 +1,7 @@
-package audioplayer;
+package audioplayer.audio;
 
 import audiofilereader.MusicData;
+import audioplayer.volume.AudioLevel;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Optional;
@@ -34,10 +35,19 @@ public class AudioPlayer implements Runnable {
 	
 	private AudioLevel audioLevel;
 	
-	public AudioPlayer(MusicData musicData) {
+	public AudioPlayer(MusicData musicData, boolean stopped) {
+		if (musicData == null) {
+			musicData = MusicData.createDefault();
+		}
+		
 		this.musicData = musicData;
 		audioLevel = new AudioLevel();
 		latch = new CountDownLatch(1);
+		
+		if (stopped) {
+			stopped = true;
+			paused = true;
+		}
 		
 		init();
 	}
@@ -91,7 +101,7 @@ public class AudioPlayer implements Runnable {
 		
 		try {
 			line = (SourceDataLine) AudioSystem.getLine(info);
-			line.addLineListener(new MyLineListener());
+			//line.addLineListener(new MyLineListener()); //React to line updates, like stop play pause etc.
 			
 			//chunkSize explanations:
 			//chunkSize is how much at a time we write to the line buffer.
@@ -111,6 +121,7 @@ public class AudioPlayer implements Runnable {
 	}
 	
 	private void stop() {
+		pause();
 		line.flush();
 		line.stop();
 		stopped = true;
@@ -137,13 +148,13 @@ public class AudioPlayer implements Runnable {
 	}
 	
 	private void play() {
-		while (currentHEAD < musicData.dataBytes.length && !paused) {
-			int remainingDataLength = musicData.dataBytes.length - (int) currentHEAD; //uses this to write all to the end when chunkSize was too large
+		while (currentHEAD < musicData.getDataLength() && !paused) {
+			int remainingDataLength = (int) (musicData.getDataLength() - currentHEAD); //uses this to write all to the end when chunkSize was too large
 			
 			//this made it much faster with bigger dataBytes array length
 			byte[] buf = new byte[Math.min(chunkSize, remainingDataLength)];
 			for (int i = 0; i < buf.length; i++) {
-				buf[i] = musicData.dataBytes[(int) currentHEAD + i];
+				buf[i] = musicData.getDataBytes()[(int) currentHEAD + i];
 			}
 			int written = line.write(buf, 0, buf.length);
 			
@@ -154,7 +165,7 @@ public class AudioPlayer implements Runnable {
 		}
 		
 		if (!paused) {
-			paused = true;
+			line.drain();
 			stop();
 		}
 	}
