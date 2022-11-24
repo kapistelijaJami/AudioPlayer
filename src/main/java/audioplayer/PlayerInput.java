@@ -12,10 +12,10 @@ import javax.swing.event.MouseInputListener;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
 import lc.kra.system.mouse.event.GlobalMouseListener;
 
-public class Input implements MouseInputListener, MouseWheelListener, KeyListener, GlobalMouseListener, ComponentListener {
-	private AudioPlayerGUI gui;
+public class PlayerInput implements MouseInputListener, MouseWheelListener, KeyListener, GlobalMouseListener, ComponentListener {
+	protected PlayerGUI gui;
 	
-	public Input(AudioPlayerGUI game) {
+	public PlayerInput(PlayerGUI game) {
 		this.gui = game;
 	}
 	
@@ -132,11 +132,11 @@ public class Input implements MouseInputListener, MouseWheelListener, KeyListene
 				audioPlayer.forwardMilliSeconds(5000);
 				break;
 			case KeyEvent.VK_F:
-				audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(audioPlayer.currentSampleRateMultiplierPercent + 25, 25, 400);
+				audioPlayer.currentSamplerateMultiplierPercent = HelperFunctions.clamp(audioPlayer.currentSamplerateMultiplierPercent + 25, 25, 400);
 				audioPlayer.refreshAudioFormat();
 				break;
 			case KeyEvent.VK_D:
-				audioPlayer.currentSampleRateMultiplierPercent = HelperFunctions.clamp(audioPlayer.currentSampleRateMultiplierPercent - 25, 25, 400);
+				audioPlayer.currentSamplerateMultiplierPercent = HelperFunctions.clamp(audioPlayer.currentSamplerateMultiplierPercent - 25, 25, 400);
 				audioPlayer.refreshAudioFormat();
 				break;
 			case KeyEvent.VK_ALT:

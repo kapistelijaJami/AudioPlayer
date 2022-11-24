@@ -17,22 +17,11 @@ public class VolumeSlider extends Panel {
 	private int yOffset = 20;
 	private boolean dragging = false;
 	
-	public VolumeSlider(int x, int y, int width, int height, AudioPlayer audioPlayer) {
+	
+	public VolumeSlider(int x, int y, int width, int height, VolumeController volumeController) {
 		super(x, y, width, height);
 		
-		volumeController = new VolumeController(audioPlayer);
-	}
-	
-	/**
-	 * Change volume by little bit with scroll.
-	 * @param scrollDirection Should be -e.getWheelRotation()
-	 */
-	public void scroll(int scrollDirection) {
-		volumeController.scroll(scrollDirection);
-	}
-	
-	public void setVolume(int percent) {
-		volumeController.setVolume(percent);
+		this.volumeController = volumeController;
 	}
 	
 	@Override
@@ -109,14 +98,6 @@ public class VolumeSlider extends Panel {
 	private int getMidLineX() {
 		return x + width / 2 - 15;
 	}
-	
-	public int getCurrentVolumePercent() {
-		return volumeController.getCurrentVolumePercent();
-	}
-	
-	public void reapplyVolume() {
-		volumeController.reapplyVolume();
-	}
 
 	public boolean hover(MouseEvent e) {
 		if (dragging) {
@@ -138,9 +119,9 @@ public class VolumeSlider extends Panel {
 		if (!dragging && isInside(e.getX(), e.getY())) {
 			Rectangle r = getButtonHitbox();
 			if (e.getY() < r.getY()) {
-				scroll(1);
+				volumeController.scroll(1);
 			} else {
-				scroll(-1);
+				volumeController.scroll(-1);
 			}
 		}
 	}
@@ -172,7 +153,7 @@ public class VolumeSlider extends Panel {
 				return true;
 			}
 			
-			setVolume(getClosestVolumePercent(e.getY()));
+			volumeController.setVolume(getClosestVolumePercent(e.getY()));
 			return true;
 		}
 		return false;

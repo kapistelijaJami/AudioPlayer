@@ -12,28 +12,50 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import uilibrary.RenderText;
 
 //Current time, play, stop etc buttons. maybe other information
 public class Playbar {
 	private int x, y, width, height;
 	private List<Button> buttons = new ArrayList<>();
-	private Rectangle speedMultiplierSpace;
 	private int xMargin = 2;
 	private int yMargin = 2;
 	
 	private final AudioPlayer audioPlayer;
+	private final int buttonHeight;
+	private final int buttonWidth;
 	
-	public Playbar(int x, int y, int width, int height, AudioPlayer audioPlayer, WaveformDrawer waveformDrawer, Consumer<Object> pause, Consumer<Object> stop) {
+	/**
+	 * Create playbar.
+	 * <p>
+	 * Add buttons with:
+	 * <pre>
+	 * {@code 
+	 *	playbar.addButton("Pause", this::togglePause);
+	 *	playbar.addButton("Stop", this::stopTheMusic);
+	 *	playbar.addButton("<<", this::goToBeginning);
+	 * }
+	 * </pre>
+	 * 
+	 * @param x
+	 * @param y
+	 * @param width
+	 * @param height
+	 * @param audioPlayer 
+	 */
+	public Playbar(int x, int y, int width, int height, AudioPlayer audioPlayer) {
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
 		this.audioPlayer = audioPlayer;
 		
-		int buttonHeight = height - yMargin * 2;
-		int buttonWidth = buttonHeight + 15;
+		buttonHeight = this.height - yMargin * 2;
+		buttonWidth = buttonHeight + 15;
+		
+		/*addButton("Pause", this::togglePause);
+		addButton("Stop", o -> audioPlayer.stopTheMusic(buttonHeight));
+		addButton("<<", function);
 		
 		Button b = new Button(x + xMargin, y + yMargin, buttonWidth, buttonHeight, Color.GRAY, pause);
 		b.addStringAlignment(new StringAlignment("Pause", Color.BLACK));
@@ -47,7 +69,27 @@ public class Playbar {
 		b.addStringAlignment(new StringAlignment("<<", Color.BLACK));
 		buttons.add(b);
 		
-		speedMultiplierSpace = new Rectangle(x + xMargin * 3 + buttonWidth * 3 + 10, y + yMargin, buttonWidth, buttonHeight);
+		speedMultiplierSpace = new Rectangle(x + xMargin * 3 + buttonWidth * 3 + 10, y + yMargin, buttonWidth, buttonHeight);*/
+	}
+	
+	public final void addButton(String text, Runnable function) {
+		int xx = this.x + xMargin + getButtonsWidth();
+		
+		Button b = new Button(xx, y + yMargin, buttonWidth, buttonHeight, Color.GRAY, function);
+		b.addStringAlignment(new StringAlignment(text, Color.BLACK));
+		buttons.add(b);
+	}
+	
+	public void removeButton(int i) {
+		
+	}
+	
+	private int getButtonsWidth() {
+		return (xMargin + buttonWidth) * buttons.size();
+	}
+	
+	private Rectangle getSpeedMultiplierSpace() {
+		return new Rectangle(getButtonsWidth() + 10, y + yMargin, buttonWidth, buttonHeight);
 	}
 	
 	public void render(Graphics2D g, boolean canPlayAudio) {
@@ -60,7 +102,8 @@ public class Playbar {
 		
 		g.setColor(Color.LIGHT_GRAY);
 		
-		Rectangle neededSpace = RenderText.drawStringWithAlignment(g, (audioPlayer.currentSampleRateMultiplierPercent / 100.0) + "x", speedMultiplierSpace, null, Alignment.LEFT);
+		Rectangle speedMultiplierSpace = getSpeedMultiplierSpace();
+		Rectangle neededSpace = RenderText.drawStringWithAlignment(g, (audioPlayer.currentSamplerateMultiplierPercent / 100.0) + "x", speedMultiplierSpace, null, Alignment.LEFT);
 		
 		String timeDurationString = "";
 		
@@ -88,8 +131,6 @@ public class Playbar {
 		for (Button button : buttons) {
 			button.setX(button.getX() + diffX);
 		}
-		
-		speedMultiplierSpace.x += diffX;
 	}
 	
 	public int getY() {
@@ -103,8 +144,6 @@ public class Playbar {
 		for (Button button : buttons) {
 			button.setY(button.getY() + diffY);
 		}
-		
-		speedMultiplierSpace.y += diffY;
 	}
 	
 	public int getWidth() {
@@ -144,29 +183,35 @@ public class Playbar {
 		return wasHover;
 	}
 	
-	public void overridePauseButton(Consumer<Object> pause) {
+	public void overridePauseButton(Runnable pause) {
 		if (buttons.size() >= 1) {
 			buttons.get(0).setAction(pause);
 		}
 	}
 	
-	public void overrideStopButton(Consumer<Object> stop) {
+	public void overrideStopButton(Runnable stop) {
 		if (buttons.size() >= 2) {
 			buttons.get(1).setAction(stop);
 		}
 	}
 	
-	public void overrideGoToStartButton(Consumer<Object> goToStart) {
+	public void overrideGoToStartButton(Runnable goToStart) {
 		if (buttons.size() >= 3) {
 			buttons.get(2).setAction(goToStart);
 		}
 	}
 	
 	public void update() {
-		if (audioPlayer.isPaused()) {
-			buttons.get(0).setStringAlignment(new StringAlignment("Play", Color.BLACK));
-		} else {
-			buttons.get(0).setStringAlignment(new StringAlignment("Pause", Color.BLACK));
+		for (Button button : buttons) {
+			String text = button.getMainText();
+			if (text.equals("Play") || text.equals("Pause")) {
+				if (audioPlayer.isPaused()) {
+					button.setStringAlignment(new StringAlignment("Play", Color.BLACK));
+				} else {
+					button.setStringAlignment(new StringAlignment("Pause", Color.BLACK));
+				}
+				break;
+			}
 		}
 	}
 }

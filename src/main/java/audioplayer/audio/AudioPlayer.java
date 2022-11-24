@@ -2,15 +2,8 @@ package audioplayer.audio;
 
 import audiofilereader.MusicData;
 import audioplayer.volume.AudioLevel;
-import java.nio.ByteBuffer;
-import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
@@ -31,9 +24,11 @@ public class AudioPlayer implements Runnable {
 	
 	private long lastCurrentHEADUpdateTime;
 	
-	public int currentSampleRateMultiplierPercent = 100; //How fast to play the audio file in percentage. 100 is 1x speed. 150 is 1.5x speed etc.
+	public int currentSamplerateMultiplierPercent = 100; //How fast to play the audio file in percentage. 100 is 1x speed. 150 is 1.5x speed etc.
 	
 	private AudioLevel audioLevel;
+	
+	private Runnable finishedFunction;
 	
 	public AudioPlayer(MusicData musicData, boolean stopped) {
 		if (musicData == null) {
@@ -50,6 +45,14 @@ public class AudioPlayer implements Runnable {
 		}
 		
 		init();
+	}
+	
+	/**
+	 * Callback for when the music finishes playing because it reached the end.
+	 * @param finishedFunction 
+	 */
+	public void setFinishedCallback(Runnable finishedFunction) {
+		this.finishedFunction = finishedFunction;
 	}
 	
 	public void setMusicData(MusicData musicData) {
@@ -91,6 +94,24 @@ public class AudioPlayer implements Runnable {
 		return new AudioFormat(sampleRate, musicData.bitsPerSample, musicData.numberOfChannels, true, false);
 	}
 	
+	private void start() {
+		line.start(); //makes line isRunning() true, "isRunning" should be called "isStarted", because that's what it checks.
+		stopped = false;
+	}
+	
+	private void stop() {
+		pause();
+		line.flush();
+		line.stop();
+		stopped = true;
+	}
+	
+	private void close() {
+		//shut down audio
+		stop();
+		line.close();
+	}
+	
 	private void init() {
 		double speedMultiplier = getSpeedMultiplier();
 		int sampleRate = (int) (musicData.sampleRate * speedMultiplier);
@@ -120,33 +141,6 @@ public class AudioPlayer implements Runnable {
 		}
 	}
 	
-	private void stop() {
-		pause();
-		line.flush();
-		line.stop();
-		stopped = true;
-	}
-	
-	private void close() {
-		//shut down audio
-		stop();
-		line.close();
-	}
-	
-	/**
-	 * Line is literally playing the music right now.
-	 * It is reading or writing from the buffer.
-	 * @return 
-	 */
-	public boolean isActive() {
-		return line.isActive();
-	}
-	
-	private void start() {
-		line.start(); //makes line isRunning() true, "isRunning" should be called "isStarted", because that's what it checks.
-		stopped = false;
-	}
-	
 	private void play() {
 		while (currentHEAD < musicData.getDataLength() && !paused) {
 			int remainingDataLength = (int) (musicData.getDataLength() - currentHEAD); //uses this to write all to the end when chunkSize was too large
@@ -164,10 +158,21 @@ public class AudioPlayer implements Runnable {
 			}
 		}
 		
-		if (!paused) {
-			line.drain();
+		if (!paused) { //music ended
 			stop();
+			if (finishedFunction != null) {
+				finishedFunction.run();
+			}
 		}
+	}
+	
+	/**
+	 * Line is literally playing the music right now.
+	 * It is reading or writing from the buffer.
+	 * @return 
+	 */
+	public boolean isActive() {
+		return line.isActive();
 	}
 	
 	public void refreshAudioFormat() {
@@ -332,8 +337,8 @@ public class AudioPlayer implements Runnable {
 		if (!stopped) {
 			pause();
 			stop();
-			updateCurrentLocationByFrame(continueFrame);
 		}
+		updateCurrentLocationByFrame(continueFrame);
 	}
 	
 	/**
@@ -355,6 +360,6 @@ public class AudioPlayer implements Runnable {
 	}
 	
 	public double getSpeedMultiplier() {
-		return currentSampleRateMultiplierPercent / 100.0;
+		return currentSamplerateMultiplierPercent / 100.0;
 	}
 }

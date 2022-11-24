@@ -29,8 +29,6 @@ public class WaveformDrawer extends Panel {
 	private boolean rendering = false;
 	private boolean abortRender = false;
 	private Camera cam;
-	private long playbackLineUpdateTime;
-	private long lastPlaybackLineFrame;
 	
 	private boolean mono = false;
 	
@@ -239,7 +237,7 @@ public class WaveformDrawer extends Panel {
 		return HelperFunctions.clamp(frame, 0, audioPlayer.getMusicData().getFrameCount());
 	}
 	
-	public void createWaveformImages() {
+	public final void createWaveformImages() {
 		rendering = true;
 		waveformChanged = false;
 		int h = height / (mono ? 1 : 2);
@@ -356,6 +354,8 @@ public class WaveformDrawer extends Panel {
 	}
 	
 	public boolean zoom(int amountScrolled) {
+		if (lastMouseX == null) return false;
+		
 		double zoom = cam.getZoom();
 		int hoverFrame = xCoordToFrame(lastMouseX);
 		//lastMouseX is the location where hoverFrame should be after zoom
