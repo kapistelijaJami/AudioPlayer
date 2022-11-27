@@ -91,7 +91,7 @@ public class AudioPlayer implements Runnable {
 	}
 	
 	private AudioFormat getAudioFormat(int sampleRate) {
-		return new AudioFormat(sampleRate, musicData.bitsPerSample, musicData.numberOfChannels, true, false);
+		return new AudioFormat(sampleRate, musicData.bitsPerSample, musicData.getChannels(), true, false);
 	}
 	
 	private void start() {
@@ -213,6 +213,11 @@ public class AudioPlayer implements Runnable {
 		int currentByte = currentHEAD + (int) musicData.millisToByteNumber((long) ((System.currentTimeMillis() - lastCurrentHEADUpdateTime) * getSpeedMultiplier())); //to move more smoothly
 		
 		return musicData.bytesToFrameNumber(currentByte - line.getBufferSize() / 2);
+	}
+	
+	public void setCurrentTimeByMillis(long millis) {
+		int frame = musicData.millisToFrameNumber(millis);
+		updateCurrentLocationByFrame(frame);
 	}
 	
 	public void setCurrentTimeByMicros(long micros) {

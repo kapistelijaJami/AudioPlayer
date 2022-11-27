@@ -11,7 +11,6 @@ import java.awt.image.BufferedImage;
 import javax.swing.SwingUtilities;
 import uilibrary.Panel;
 
-//TODO: try to optimize the waveform with longer audios more. (with over 1h wav files it's pretty laggy)
 //TODO: Also for subtitle editor, create waveform where it's easier to see the parts where they talk. Mute the others etc for the render.
 public class WaveformDrawer extends Panel {
 	protected final AudioPlayer audioPlayer;
@@ -25,10 +24,14 @@ public class WaveformDrawer extends Panel {
 	private BufferedImage waveformLeft;
 	private BufferedImage waveformRight;
 	
+	private BufferedImage waveformCacheLeft;
+	private BufferedImage waveformCacheRight;
+	
 	private boolean waveformChanged = false;
 	private boolean rendering = false;
 	private boolean abortRender = false;
 	private Camera cam;
+	private long maxZoomDuration = 1000;
 	
 	private boolean mono = false;
 	
@@ -45,7 +48,13 @@ public class WaveformDrawer extends Panel {
 		playStartFrame = null;
 		lastMouseX = null;
 		waveformChanged = true;
+		waveformCacheLeft = null;
+		waveformCacheRight = null;
 		resetZoom();
+	}
+	
+	public void setMaxZoomDuration(long milliseconds) {
+		this.maxZoomDuration = milliseconds;
 	}
 	
 	public void setMono(boolean b) {
@@ -53,7 +62,7 @@ public class WaveformDrawer extends Panel {
 		waveformChanged = true;
 	}
 	
-	public void setWaveformChanged(boolean b) {
+	private void setWaveformChanged(boolean b) {
 		this.waveformChanged = b;
 	}
 	
@@ -61,7 +70,7 @@ public class WaveformDrawer extends Panel {
 	public void update() {
 		int frame = (int) audioPlayer.getCurrentFrame();
 		
-		while (!audioPlayer.isPaused() && getTValueByFrameInWaveArea(frame) > 0.9 && !lastSampleIsVisible()) {
+		while (!audioPlayer.isPaused() && getTValueByFrameInWaveArea(frame) > 0.9 && !lastSampleIsVisible()) { //updates the camera when moving to the right
 			int newStart = getFrameByTValueInWaveArea(0.8);
 			cam.setFirstSample(newStart, audioPlayer.getMusicData());
 			waveformChanged = true;
@@ -81,8 +90,6 @@ public class WaveformDrawer extends Panel {
 	protected void renderWaveform(Graphics2D g) {
 		int h = height / 2;
 		
-		g.setColor(Color.LIGHT_GRAY);
-		g.fillRect(x, y, width, h);
 		g.setColor(Color.LIGHT_GRAY);
 		g.fillRect(x, y + h, width, h);
 		
@@ -242,20 +249,43 @@ public class WaveformDrawer extends Panel {
 		waveformChanged = false;
 		int h = height / (mono ? 1 : 2);
 		MusicData musicData = audioPlayer.getMusicData();
-		waveformLeft = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
-		//TODO: make renderWaveform render it without using so big buffer, do with small buffers or streams, or just use musicData samples with indexes.
-		renderWaveform(waveformLeft.createGraphics(), musicData.getSamplesByChannel(true, cam.getFirstSample(), cam.getSampleCount(musicData)), h);
 		
-		if (!mono) {
-			waveformRight = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
-			renderWaveform(waveformRight.createGraphics(), musicData.getSamplesByChannel(false, cam.getFirstSample(), cam.getSampleCount(musicData)), h);
+		double zoom = cam.getZoom();
+		if (zoom == 1 && waveformCacheLeft != null) {
+			rendering = false;
+			return;
 		}
+		
+		int firstSample = cam.getFirstSample();
+		int length = cam.getSampleCount(musicData);
+		
+		BufferedImage waveformLeftTemp = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
+		renderWaveform(waveformLeftTemp.createGraphics(), musicData.getSamplesLeft(), h, firstSample, length);
+		
+		BufferedImage waveformRightTemp = null;
+		if (!mono) {
+			if (musicData.getChannels() == 1) {
+				waveformRightTemp = waveformLeftTemp;
+			} else {
+				waveformRightTemp = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
+				renderWaveform(waveformRightTemp.createGraphics(), musicData.getSamplesRight(), h, firstSample, length);
+			}
+		}
+		
+		rendering = false;
 		
 		if (abortRender) {
-			waveformChanged = true;
+			abortRender = false;
+			return;
 		}
-		rendering = false;
-		abortRender = false;
+		
+		waveformLeft = waveformLeftTemp;
+		waveformRight = waveformRightTemp;
+		
+		if (zoom == 1 && waveformCacheLeft == null) {
+			waveformCacheLeft = waveformLeft;
+			waveformCacheRight = waveformRight;
+		}
 	}
 	
 	public void abortRender() {
@@ -264,8 +294,8 @@ public class WaveformDrawer extends Panel {
 		}
 	}
 	
-	private void renderWaveform(Graphics2D g, short[] samples, int height) {
-		int sampleCount = samples.length;
+	private void renderWaveform(Graphics2D g, short[] samples, int height, int firstSample, int length) {
+		int sampleCount = length;
 		int samplesPerPixel = getSamplesPerPixel(sampleCount);
 		int maxValue = audioPlayer.getMusicData().getMaxValue();
 		
@@ -285,10 +315,10 @@ public class WaveformDrawer extends Panel {
 			
 			//finds min and max values inside this line (pixel)
 			for (int j = 0; j < samplesPerPixel; j++) {
-				if (i + j >= sampleCount) {
+				if (i + j >= sampleCount || firstSample + i + j >= samples.length) {
 					break;
 				}
-				short val = samples[i + j];
+				short val = samples[firstSample + i + j];
 				
 				if (val > highest) {
 					highest = val;
@@ -346,6 +376,11 @@ public class WaveformDrawer extends Panel {
 		hovering = false;
 	}
 	
+	public void resetCache() {
+		waveformCacheLeft = null;
+		waveformCacheRight = null;
+	}
+	
 	public int getPlayStartFrame() {
 		if (playStartFrame == null) {
 			return 0;
@@ -353,8 +388,10 @@ public class WaveformDrawer extends Panel {
 		return playStartFrame;
 	}
 	
-	public boolean zoom(int amountScrolled) {
-		if (lastMouseX == null) return false;
+	public void zoom(int amountScrolled) {
+		if (lastMouseX == null) return;
+		
+		cam.setMaxCap(Camera.getZoomLevelByDuration(maxZoomDuration, audioPlayer.getMusicData()));
 		
 		double zoom = cam.getZoom();
 		int hoverFrame = xCoordToFrame(lastMouseX);
@@ -368,13 +405,25 @@ public class WaveformDrawer extends Panel {
 		int startFrame = hoverFrame - sampleOffset;
 		cam.setFirstSample(startFrame, audioPlayer.getMusicData());
 		
-		//System.out.println("ZOOM! " + cam.getZoom());
 		
-		return zoom != cam.getZoom(); //zoom has changed
+		if (zoom != cam.getZoom()) {
+			if (cam.getZoom() == 1 && waveformCacheLeft != null) {
+				abortRender();
+				waveformLeft = waveformCacheLeft;
+				waveformRight = waveformCacheRight;
+			} else {
+				setWaveformChanged(true);
+			}
+		}
 	}
 	
 	public void resetZoom() {
 		cam.setZoom(1);
 		cam.resetFirstSample();
+	}
+	
+	public void setVisibleArea(long startTime, long millis) {
+		cam.setZoomByDuration(millis, audioPlayer.getMusicData());
+		cam.setFirstSample(startTime, audioPlayer.getMusicData());
 	}
 }

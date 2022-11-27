@@ -5,6 +5,7 @@ import audiofilereader.MusicData;
 public class Camera {
 	private double zoom = 1;
 	private int firstSample = 0;
+	private double maxCap = -1;
 	
 	public double getZoom() {
 		return zoom;
@@ -15,12 +16,20 @@ public class Camera {
 		capZoom();
 	}
 	
+	public void setMaxCap(double maxCap) {
+		this.maxCap = maxCap;
+	}
+	
 	public int getFirstSample() {
 		return firstSample;
 	}
 	
 	public void setFirstSample(int firstSample, MusicData musicData) {
 		this.firstSample = (int) Math.max(0, Math.min(musicData.getFrameCount() - getSampleCount(musicData), firstSample));
+	}
+	
+	public void setFirstSample(long milliseconds, MusicData musicData) {
+		setFirstSample(musicData.millisToFrameNumber(milliseconds), musicData);
 	}
 	
 	public void resetFirstSample() {
@@ -39,7 +48,10 @@ public class Camera {
 	}
 	
 	private void capZoom() {
-		zoom = Math.max(1, zoom); //TODO: do max cap too
+		zoom = Math.max(1, zoom);
+		if (maxCap != -1) {
+			zoom = Math.min(maxCap, zoom);
+		}
 	}
 	
 	public int getSampleCount(MusicData musicData) {
@@ -48,5 +60,22 @@ public class Camera {
 	
 	public int getLastSample(MusicData musicData) {
 		return firstSample + getSampleCount(musicData);
+	}
+	
+	public void setZoomByDuration(long millis, MusicData musicData) {
+		setZoom(getZoomLevelByDuration(millis, musicData));
+	}
+	
+	public static double getZoomLevelByLength(int length, int frameCount) {
+		return frameCount / (double) length;
+	}
+	
+	public static double getZoomLevelByDuration(long millis, MusicData musicData) {
+		int frames = musicData.millisToFrameNumber(millis);
+		int frameCount = musicData.getFrameCount();
+		if (frameCount == 0) {
+			return 1;
+		}
+		return getZoomLevelByLength(frames, frameCount);
 	}
 }

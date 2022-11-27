@@ -25,8 +25,8 @@ import uilibrary.Window;
 import uilibrary.thread.ThreadExecutor;
 
 public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
-	protected enum State {
-		NORMAL, NO_AUDIO, LOADING; //no audio, means you can't use musicData, loading means the same, but it should render a loading box.
+	public enum State {
+		NORMAL, NO_AUDIO, LOADING; //no audio means you can't use musicData, loading means the same, but it should render a loading box.
 		
 		public boolean canPlayAudio() {
 			return this == NORMAL;
@@ -73,6 +73,7 @@ public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
 		playbar.addButton("<<", this::goToBeginning);
 	}
 	
+	//Override these if you need them:
 	public void mousePressed(MouseEvent e) {}
 	public void mouseDragged(MouseEvent e) {}
 	public void mouseReleased(MouseEvent e) {}
@@ -81,7 +82,16 @@ public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
 	public void mouseMoved(MouseEvent e) {}
 	public void mouseMoved(GlobalMouseEvent event) {}
 	public void mouseWheelMoved(MouseWheelEvent e) {}
-	public void windowResized(int w, int h) {}
+	
+	/**
+	 * Resets the waveform cache when resizing.
+	 * Call this if you want to override it with super.windowResized(w, h);
+	 * @param w
+	 * @param h 
+	 */
+	public void windowResized(int w, int h) {
+		waveformDrawer.resetCache();
+	}
 	
 	protected abstract void render(Graphics2D g);
 	
@@ -132,7 +142,7 @@ public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
 			return;
 		}
 		
-		audioPlayer.update(); //TODO: see if this throws a nullptr sometimes
+		audioPlayer.update();
 		if (state.canPlayAudio()) waveformDrawer.update();
 		
 		playbar.update();
@@ -149,6 +159,10 @@ public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
 	protected void shutdown() {
 		window.close();
 		super.shutdown();
+	}
+	
+	public State getState() {
+		return state;
 	}
 	
 	public AudioPlayer getAudioPlayer() {

@@ -71,7 +71,7 @@ public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and 
 		verticalDivider.render(g);
 		playbar.render(g, state.canPlayAudio());
 		
-		if (state == State.LOADING) LoadingBox.renderLoadingBox(g, waveformDrawer.getBounds(), MusicData.CONVERT_PROGRESS);
+		if (state == State.LOADING) LoadingBox.renderLoadingBox(g, waveformDrawer.getBounds(), MusicData.convertProgress);
 	}
 	
 	@Override
@@ -83,7 +83,7 @@ public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and 
 	}
 	
 	@Override
-	public void mouseDragged(MouseEvent e) { //TODO: do middle mouse move sideways
+	public void mouseDragged(MouseEvent e) { //TODO: do right mouse move sideways
 		if (!horizontalDivider.mouseDragged(e) && !verticalDivider.mouseDragged(e) && !volumeSlider.mouseDragged(e)) {
 			waveformDrawer.mouseDragged(e);
 		}
@@ -139,10 +139,7 @@ public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and 
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) {
 		if (e.isAltDown()) {
-			boolean changed = waveformDrawer.zoom(-e.getWheelRotation());
-			if (changed) {
-				waveformDrawer.setWaveformChanged(true);
-			}
+			waveformDrawer.zoom(-e.getWheelRotation());
 		} else {
 			volumeController.scroll(-e.getWheelRotation());
 		}
@@ -150,6 +147,8 @@ public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and 
 	
 	@Override
 	public void windowResized(int w, int h) {
+		super.windowResized(w, h);
+		
 		if (horizontalDivider.dir == DividerOrientation.HORIZONTAL) {
 			horizontalDivider.setLength(w, false);
 			horizontalDivider.setMaxSpace(h - playbar.getHeight(), false);
