@@ -2,9 +2,11 @@ package audioplayer.volume;
 
 import audioplayer.audio.AudioPlayer;
 import audioplayer.HelperFunctions;
+import audioplayer.MyCursor;
 import uilibrary.enums.Alignment;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -99,12 +101,16 @@ public class VolumeSlider extends Panel {
 		return x + width / 2 - 15;
 	}
 
-	public boolean hover(MouseEvent e) {
+	public boolean hover(MouseEvent e, MyCursor cursor) {
 		if (dragging) {
 			return true;
 		}
 		Rectangle r = getButtonHitbox();
-		return r.contains(e.getX(), e.getY());
+		if (r.contains(e.getX(), e.getY())) {
+			cursor.type = Cursor.N_RESIZE_CURSOR;
+			return true;
+		}
+		return false;
 	}
 
 	public void setDragging(boolean b) {
@@ -112,7 +118,7 @@ public class VolumeSlider extends Panel {
 	}
 
 	public void mousePressed(MouseEvent e) {
-		if (hover(e)) {
+		if (hover(e, new MyCursor())) {
 			dragging = true;
 		}
 		

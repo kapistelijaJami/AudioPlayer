@@ -2,11 +2,13 @@ package audioplayer.ui;
 
 import audioplayer.waveform.WaveformDrawer;
 import audiofilereader.MusicData;
+import audioplayer.MyCursor;
 import audioplayer.audio.AudioPlayer;
 import uilibrary.enums.Alignment;
 import uilibrary.menu.Button;
 import uilibrary.menu.StringAlignment;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
@@ -173,11 +175,13 @@ public class Playbar {
 		return false;
 	}
 
-	public boolean hover(MouseEvent e) {
+	public boolean hover(MouseEvent e, MyCursor cursor) {
 		boolean wasHover = false;
 		for (Button button : buttons) {
 			if (button.hover(e.getX(), e.getY())) {
 				wasHover = true;
+				cursor.type = Cursor.HAND_CURSOR;
+				break;
 			}
 		}
 		return wasHover;

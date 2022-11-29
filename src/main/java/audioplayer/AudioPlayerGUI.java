@@ -103,24 +103,20 @@ public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and 
 	public void mouseMoved(MouseEvent e) {
 		waveformDrawer.resetHover();
 		
-		int cursor = Cursor.DEFAULT_CURSOR;
+		MyCursor cursor = new MyCursor(Cursor.DEFAULT_CURSOR);
 		if (horizontalDivider.hover(e)) {
-			cursor = horizontalDivider.getCursorTypeForHover();
+			cursor.type = horizontalDivider.getCursorTypeForHover();
 		} else if (verticalDivider.hover(e)) {
-			cursor = verticalDivider.getCursorTypeForHover();
-		} else {
-			if (waveformDrawer.hover(e)) {
-				cursor = Cursor.TEXT_CURSOR;
-			}
-		}
-		if (volumeSlider.hover(e)) {
-			cursor = Cursor.N_RESIZE_CURSOR;
-		}
-		if (playbar.hover(e)) {
-			cursor = Cursor.HAND_CURSOR;
+			cursor.type = verticalDivider.getCursorTypeForHover();
+		} else if (waveformDrawer.hover(e, cursor));
+		
+		else if (volumeSlider.hover(e, cursor));
+		
+		else {
+			playbar.hover(e, cursor);
 		}
 		
-		changeCursor(cursor);
+		changeCursor(cursor.type);
 	}
 	
 	//how to create fake mouseEvent from GlobalMouseEvent object: new MouseEvent(this, 0, System.currentTimeMillis(), 0, p.x, p.y, 1, false, event.getButton());

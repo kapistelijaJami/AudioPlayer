@@ -1,10 +1,12 @@
 package audioplayer.waveform;
 
+import audioplayer.MyCursor;
 import audiofilereader.MusicData;
 import audioplayer.audio.AudioPlayer;
 import audioplayer.HelperFunctions;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
@@ -19,7 +21,7 @@ public class WaveformDrawer extends Panel {
 	
 	private Integer playStartFrame;
 	private Integer lastMouseX;
-	private boolean hovering = false;
+	protected boolean hovering = false;
 	
 	private BufferedImage waveformLeft;
 	private BufferedImage waveformRight;
@@ -244,7 +246,7 @@ public class WaveformDrawer extends Panel {
 		return HelperFunctions.clamp(frame, 0, audioPlayer.getMusicData().getFrameCount());
 	}
 	
-	public final void createWaveformImages() {
+	private final void createWaveformImages() {
 		rendering = true;
 		waveformChanged = false;
 		int h = height / (mono ? 1 : 2);
@@ -353,23 +355,29 @@ public class WaveformDrawer extends Panel {
 	public void setWidth(int width) {
 		this.width = Math.max(widthOffset * 2, width);
 		waveformChanged = true;
+		resetCache();
 	}
 	
 	@Override
 	public void setHeight(int height) {
 		this.height = height;
 		waveformChanged = true;
+		resetCache();
 	}
-
-	public boolean hover(MouseEvent e) {
-		if (isInside(e.getX(), e.getY())) {
-			lastMouseX = e.getX() + 2; //+ 2 to correct for cursor offset
-			hovering = true;
-			return true;
-		} else {
-			hovering = false;
-			return false;
+	
+	public boolean hover(MouseEvent e, MyCursor cursor) {
+		hovering = isInside(e.getX(), e.getY());
+		
+		if (hovering) {
+			setLastMouseX(e.getX());
+			cursor.type = Cursor.TEXT_CURSOR;
 		}
+		
+		return hovering;
+	}
+	
+	public void setLastMouseX(int x) {
+		lastMouseX = x + 2; // + 2 to correct for cursor offset
 	}
 	
 	public void resetHover() {

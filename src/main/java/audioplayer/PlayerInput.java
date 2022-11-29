@@ -78,34 +78,34 @@ public class PlayerInput implements MouseInputListener, MouseWheelListener, KeyL
 	public void mouseWheel(GlobalMouseEvent event) {
 		
 	}
-
+	
 	@Override
 	public void componentResized(ComponentEvent e) {
 		int w = e.getComponent().getWidth();
 		int h = e.getComponent().getHeight();
 		gui.windowResized(w, h);
 	}
-
+	
 	@Override
 	public void componentMoved(ComponentEvent e) {
 		
 	}
-
+	
 	@Override
 	public void componentShown(ComponentEvent e) {
 		
 	}
-
+	
 	@Override
 	public void componentHidden(ComponentEvent e) {
 		
 	}
-
+	
 	@Override
 	public void keyTyped(KeyEvent e) {
 		
 	}
-
+	
 	@Override
 	public void keyPressed(KeyEvent e) {
 		AudioPlayer audioPlayer = gui.getAudioPlayer();

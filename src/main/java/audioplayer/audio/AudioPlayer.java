@@ -205,6 +205,10 @@ public class AudioPlayer implements Runnable {
 		return musicData.frameToMicros(getCurrentFrame());
 	}
 	
+	public double getCurrentSeconds() {
+		return musicData.frameToSeconds(getCurrentFrame());
+	}
+	
 	public int getCurrentFrame() {
 		if (line == null || paused) {
 			return musicData.bytesToFrameNumber(currentHEAD);
