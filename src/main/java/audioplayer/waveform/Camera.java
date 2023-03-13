@@ -25,7 +25,7 @@ public class Camera {
 	}
 	
 	public void setFirstSample(int firstSample, MusicData musicData) {
-		this.firstSample = (int) Math.max(0, Math.min(musicData.getFrameCount() - getSampleCount(musicData), firstSample));
+		this.firstSample = (int) Math.max(0, Math.min(musicData.getFrameCount() - getVisibleSamplecount(musicData), firstSample));
 	}
 	
 	public void setFirstSample(long milliseconds, MusicData musicData) {
@@ -38,9 +38,9 @@ public class Camera {
 	
 	public double zoom(int amount) {
 		if (amount == 1) {
-			zoom *= 2;
+			zoom *= 1.5;
 		} else {
-			zoom /= 2.0;
+			zoom /= 1.5;
 		}
 		
 		capZoom();
@@ -54,12 +54,12 @@ public class Camera {
 		}
 	}
 	
-	public int getSampleCount(MusicData musicData) {
+	public int getVisibleSamplecount(MusicData musicData) {
 		return (int) (musicData.getFrameCount() / zoom);
 	}
 	
 	public int getLastSample(MusicData musicData) {
-		return firstSample + getSampleCount(musicData);
+		return firstSample + getVisibleSamplecount(musicData);
 	}
 	
 	public void setZoomByDuration(long millis, MusicData musicData) {

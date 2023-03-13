@@ -18,9 +18,10 @@ public class VolumeDrawer extends Panel {
 	@Override
 	public void render(Graphics2D g) {
 		int h = height / 2;
+		int extra = (height % 2 == 0) ? 0 : 1; //If rounding error, then add a pixel to the height of second volume bar.
 		
 		renderVolume(g, game.getAudioPlayer().getAudioLevel().getLeft(), 0, h);
-		renderVolume(g, game.getAudioPlayer().getAudioLevel().getRight(), h, h);
+		renderVolume(g, game.getAudioPlayer().getAudioLevel().getRight(), h, h + extra);
 		
 		g.setColor(Color.BLACK);
 		g.drawLine(x, y + h, width, y + h);

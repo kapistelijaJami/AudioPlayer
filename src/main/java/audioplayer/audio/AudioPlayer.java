@@ -118,7 +118,7 @@ public class AudioPlayer implements Runnable {
 		audioFormat = getAudioFormat(sampleRate);
 		
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class, audioFormat);
-		System.out.println("\n" + info + "\n");
+		//System.out.println("\n" + info + "\n");
 		
 		try {
 			line = (SourceDataLine) AudioSystem.getLine(info);
@@ -339,7 +339,15 @@ public class AudioPlayer implements Runnable {
 	
 	/**
 	 * Stops the music.
-	 * Resets the next playback point to continueFrame
+	 * Resets the next playback point to 0.
+	 */
+	public void stopTheMusic() {
+		stopTheMusic(0);
+	}
+	
+	/**
+	 * Stops the music.
+	 * Resets the next playback point to continueFrame.
 	 * @param continueFrame Is used for resetting location to last clicked point, or to start
 	 */
 	public void stopTheMusic(int continueFrame) {

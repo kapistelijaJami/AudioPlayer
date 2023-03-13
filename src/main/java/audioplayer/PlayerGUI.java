@@ -12,11 +12,13 @@ import java.awt.Cursor;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.util.List;
+import javax.swing.AbstractAction;
 import lc.kra.system.mouse.GlobalMouseHook;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
 import uilibrary.DragAndDrop;
@@ -193,11 +195,11 @@ public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
 	protected void updateAudioFile() {
 		if (updateAudioFile == null) return;
 		state = State.LOADING; //has to put here so it doesn't go inside any of the methods right after this
-		new ThreadExecutor(o -> updateAudioFileTask(updateAudioFile)).start();
+		new ThreadExecutor(() -> updateAudioFileTask(updateAudioFile)).start();
 	}
 	
 	protected void updateAudioFileTask(File file) {
-		audioPlayer.stopTheMusic(0);
+		audioPlayer.stopTheMusic();
 		
 		waveformDrawer.reset();
 		audioPlayer.getMusicData().clearData();
