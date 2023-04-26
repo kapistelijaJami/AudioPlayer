@@ -180,10 +180,6 @@ public class WaveformDrawer extends Panel {
 		return sampleVal / (double) maxVal;
 	}
 	
-	public boolean isInside(int x, int y) {
-		return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
-	}
-	
 	private void setPlayStartFrameWithCoords(int x, int y) {
 		if (!isInside(x, y)) {
 			return;

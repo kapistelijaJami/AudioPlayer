@@ -78,10 +78,6 @@ public class VolumeSlider extends Panel {
 		}
 	}
 	
-	public boolean isInside(int x, int y) {
-		return x >= this.x && x <= this.x + width && y >= this.y && y <= this.y + height;
-	}
-	
 	public boolean isInsideY(int y) {
 		return y >= this.y && y <= this.y + height;
 	}

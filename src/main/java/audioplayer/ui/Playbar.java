@@ -15,6 +15,8 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import uilibrary.RenderText;
+import static uilibrary.enums.Alignment.*;
+import static uilibrary.enums.ReferenceType.OUTSIDE;
 
 //Current time, play, stop etc buttons. maybe other information
 public class Playbar {
@@ -75,9 +77,15 @@ public class Playbar {
 	}
 	
 	public final void addButton(String text, Runnable function) {
-		int xx = this.x + xMargin + getButtonsWidth();
+		Button previous = buttons.isEmpty() ? null : buttons.get(buttons.size() - 1);
 		
-		Button b = new Button(xx, y + yMargin, buttonWidth, buttonHeight, Color.GRAY, function);
+		Button b = new Button(buttonWidth, buttonHeight, Color.GRAY, function);
+		if (previous == null) {
+			b.arrange(this.x, this.y).setMargin(xMargin, yMargin).align(TOP, LEFT);
+		} else {
+			b.arrange().setReference(previous, OUTSIDE).setMargin(xMargin, 0).align(RIGHT);
+		}
+		
 		b.addStringAlignment(new StringAlignment(text, Color.BLACK));
 		buttons.add(b);
 	}
@@ -130,8 +138,9 @@ public class Playbar {
 		int diffX = x - this.x;
 		this.x = x;
 		
-		for (Button button : buttons) {
-			button.setX(button.getX() + diffX);
+		if (!buttons.isEmpty()) {
+			Button b = buttons.get(0);
+			b.arrange(b.getX() + diffX, b.getY());
 		}
 	}
 	
@@ -143,8 +152,9 @@ public class Playbar {
 		int diffY = y - this.y;
 		this.y = y;
 		
-		for (Button button : buttons) {
-			button.setY(button.getY() + diffY);
+		if (!buttons.isEmpty()) {
+			Button b = buttons.get(0);
+			b.arrange(b.getX(), b.getY() + diffY);
 		}
 	}
 	
@@ -166,8 +176,7 @@ public class Playbar {
 
 	public boolean mousePressed(MouseEvent e) {
 		for (Button button : buttons) {
-			if (button.isInside(e.getX(), e.getY())) {
-				button.click();
+			if (button.click(e.getX(), e.getY())) {
 				return true;
 			}
 		}

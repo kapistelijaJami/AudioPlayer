@@ -22,6 +22,6 @@ public class LoadingBox {
 		
 		g.setColor(Color.BLACK);
 		String s = "LOADING...\n" + String.format(Locale.US, "%.1f%%", percentage);
-		RenderMultilineText.drawMultilineText(g, s, null, new Rectangle(x, y, size.width, size.height), false, TextHorizontalAlign.CENTER);
+		RenderMultilineText.drawMultilineText(g, s, new Rectangle(x, y, size.width, size.height), null, false, TextHorizontalAlign.CENTER);
 	}
 }
