@@ -15,7 +15,7 @@ import java.awt.event.MouseWheelEvent;
 import lc.kra.system.mouse.event.GlobalMouseEvent;
 import uilibrary.Divider;
 
-public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and visual playtime in bottom windows bar like in potplayer
+public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and visual playtime in bottom windows taskbar icon like in potplayer
 	private VolumeDrawer volumeDrawer;
 	private Divider horizontalDivider;
 	private Divider verticalDivider;
@@ -97,6 +97,7 @@ public class AudioPlayerGUI extends PlayerGUI { //TODO: add music playlist, and 
 			//here if dont want to execute when one of the above returned true
 		}
 		volumeSlider.setDragging(false);
+		waveformDrawer.mouseReleased(e);
 	}
 	
 	@Override

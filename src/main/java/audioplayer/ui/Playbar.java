@@ -1,12 +1,10 @@
 package audioplayer.ui;
 
-import audioplayer.waveform.WaveformDrawer;
 import audiofilereader.MusicData;
 import audioplayer.MyCursor;
 import audioplayer.audio.AudioPlayer;
 import uilibrary.enums.Alignment;
-import uilibrary.menu.Button;
-import uilibrary.menu.StringAlignment;
+import uilibrary.elements.Button;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics2D;
@@ -14,7 +12,8 @@ import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import uilibrary.RenderText;
+import uilibrary.util.RenderText;
+import uilibrary.elements.TextElement;
 import static uilibrary.enums.Alignment.*;
 import static uilibrary.enums.ReferenceType.OUTSIDE;
 
@@ -86,7 +85,7 @@ public class Playbar {
 			b.arrange().setReference(previous, OUTSIDE).setMargin(xMargin, 0).align(RIGHT);
 		}
 		
-		b.addStringAlignment(new StringAlignment(text, Color.BLACK));
+		b.addTextElement(new TextElement(text, Color.BLACK));
 		buttons.add(b);
 	}
 	
@@ -135,12 +134,11 @@ public class Playbar {
 	}
 	
 	public void setX(int x) {
-		int diffX = x - this.x;
 		this.x = x;
 		
 		if (!buttons.isEmpty()) {
 			Button b = buttons.get(0);
-			b.arrange(b.getX() + diffX, b.getY());
+			b.arrange(this.x, this.y);
 		}
 	}
 	
@@ -149,12 +147,11 @@ public class Playbar {
 	}
 	
 	public void setY(int y) {
-		int diffY = y - this.y;
 		this.y = y;
 		
 		if (!buttons.isEmpty()) {
 			Button b = buttons.get(0);
-			b.arrange(b.getX(), b.getY() + diffY);
+			b.arrange(this.x, this.y);
 		}
 	}
 	
@@ -219,9 +216,9 @@ public class Playbar {
 			String text = button.getMainText();
 			if (text.equals("Play") || text.equals("Pause")) {
 				if (audioPlayer.isPaused()) {
-					button.setStringAlignment(new StringAlignment("Play", Color.BLACK));
+					button.setTextElement(new TextElement("Play", Color.BLACK));
 				} else {
-					button.setStringAlignment(new StringAlignment("Pause", Color.BLACK));
+					button.setTextElement(new TextElement("Pause", Color.BLACK));
 				}
 				break;
 			}

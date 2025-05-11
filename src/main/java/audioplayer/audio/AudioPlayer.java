@@ -26,7 +26,7 @@ public class AudioPlayer implements Runnable {
 	
 	public int currentSamplerateMultiplierPercent = 100; //How fast to play the audio file in percentage. 100 is 1x speed. 150 is 1.5x speed etc.
 	
-	private AudioLevel audioLevel;
+	private final AudioLevel audioLevel;
 	
 	private Runnable finishedFunction;
 	
@@ -40,7 +40,7 @@ public class AudioPlayer implements Runnable {
 		latch = new CountDownLatch(1);
 		
 		if (stopped) {
-			stopped = true;
+			this.stopped = true;
 			paused = true;
 		}
 		
@@ -143,12 +143,12 @@ public class AudioPlayer implements Runnable {
 	
 	private void play() {
 		while (currentHEAD < musicData.getDataLength() && !paused) {
-			int remainingDataLength = (int) (musicData.getDataLength() - currentHEAD); //uses this to write all to the end when chunkSize was too large
+			int remainingDataLength = (int) (musicData.getDataLength() - currentHEAD); //uses this to write all to the end when chunkSize was too large for the data left to play
 			
 			//this made it much faster with bigger dataBytes array length
 			byte[] buf = new byte[Math.min(chunkSize, remainingDataLength)];
 			for (int i = 0; i < buf.length; i++) {
-				buf[i] = musicData.getDataBytes()[(int) currentHEAD + i];
+				buf[i] = musicData.getDataByte(currentHEAD + i);
 			}
 			int written = line.write(buf, 0, buf.length);
 			

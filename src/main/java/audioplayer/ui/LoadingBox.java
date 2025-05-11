@@ -5,8 +5,8 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.util.Locale;
-import uilibrary.RenderMultilineText;
-import uilibrary.RenderMultilineText.TextHorizontalAlign;
+import uilibrary.util.RenderMultilineText;
+import uilibrary.util.RenderMultilineText.TextHorizontalAlign;
 
 public class LoadingBox {
 	public static void renderLoadingBox(Graphics2D g, Rectangle bounds, double percentage) {

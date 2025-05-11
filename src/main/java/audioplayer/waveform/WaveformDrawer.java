@@ -36,6 +36,7 @@ public class WaveformDrawer extends Panel {
 	private long maxZoomDuration = 1000;
 	
 	private boolean mono = false;
+	private boolean dragging = false;
 	
 	public WaveformDrawer(int x, int y, int width, int height, AudioPlayer audioPlayer) {
 		super(x, y, width, height);
@@ -72,7 +73,7 @@ public class WaveformDrawer extends Panel {
 	public void update() {
 		int frame = (int) audioPlayer.getCurrentFrame();
 		
-		while (!audioPlayer.isPaused() && getTValueByFrameInWaveArea(frame) > 0.9 && !lastSampleIsVisible()) { //updates the camera when moving to the right
+		while (!dragging && !audioPlayer.isPaused() && getTValueByFrameInWaveArea(frame) > 0.9 && !lastSampleIsVisible()) { //updates the camera when moving to the right
 			int newStart = getFrameByTValueInWaveArea(0.8);
 			cam.setFirstSample(newStart, audioPlayer.getMusicData());
 			waveformChanged = true;
@@ -153,13 +154,13 @@ public class WaveformDrawer extends Panel {
 	}
 	
 	private double getTValueByFrameInWaveArea(int frame) {
-		int sampleCount = cam.getVisibleSamplecount(audioPlayer.getMusicData());
+		int sampleCount = cam.getVisibleSampleCount(audioPlayer.getMusicData());
 		double t = (frame - cam.getFirstSample()) / (double) sampleCount;
 		return t;
 	}
 	
 	private int getFrameByTValueInWaveArea(double t) {
-		int frame = (int) (t * cam.getVisibleSamplecount(audioPlayer.getMusicData()) + cam.getFirstSample());
+		int frame = (int) (t * cam.getVisibleSampleCount(audioPlayer.getMusicData()) + cam.getFirstSample());
 		return frame;
 	}
 	
@@ -210,6 +211,7 @@ public class WaveformDrawer extends Panel {
 		
 		int frame = HelperFunctions.clamp(playStartFrame, 0, audioPlayer.getMusicData().getFrameCount());
 		audioPlayer.updateCurrentLocationByFrame(frame, true);
+		dragging = true;
 	}
 	
 	public void mouseDragged(MouseEvent e) {
@@ -227,8 +229,12 @@ public class WaveformDrawer extends Panel {
 		audioPlayer.updateCurrentLocationByFrame(frame, false);
 	}
 	
+	public void mouseReleased(MouseEvent e) {
+		dragging = false;
+	}
+	
 	public int frameToXCoord(int frame) {
-		int sampleCount = cam.getVisibleSamplecount(audioPlayer.getMusicData());
+		int sampleCount = cam.getVisibleSampleCount(audioPlayer.getMusicData());
 		double t = (frame - cam.getFirstSample()) / (double) sampleCount;
 		int xx = getWaveformX() + (int) (t * getWaveformAreaWidth());
 		
@@ -255,7 +261,7 @@ public class WaveformDrawer extends Panel {
 		}
 		
 		int firstSample = cam.getFirstSample();
-		int length = cam.getVisibleSamplecount(musicData);
+		int length = cam.getVisibleSampleCount(musicData);
 		
 		BufferedImage waveformLeftTemp = new BufferedImage(getWaveformAreaWidth(), h, BufferedImage.TYPE_INT_ARGB);
 		renderWaveform(waveformLeftTemp.createGraphics(), musicData.getSamplesLeft(), h, firstSample, length);
@@ -301,7 +307,7 @@ public class WaveformDrawer extends Panel {
 		g.setStroke(new BasicStroke(1f));
 		
 		
-		//draws all the lines (one loop is one line)
+		//draws all the lines (one loop iteration is one line)
 		int xx = 0;
 		for (int i = 0; (int) i < sampleCount; i += samplesPerPixel, xx++) {
 			if (abortRender) {
@@ -405,7 +411,7 @@ public class WaveformDrawer extends Panel {
 		
 		cam.zoom(amountScrolled);
 		
-		int sampleOffset = (int) (cam.getVisibleSamplecount(audioPlayer.getMusicData()) * t);
+		int sampleOffset = (int) (cam.getVisibleSampleCount(audioPlayer.getMusicData()) * t);
 		int startFrame = hoverFrame - sampleOffset;
 		cam.setFirstSample(startFrame, audioPlayer.getMusicData());
 		
@@ -428,6 +434,44 @@ public class WaveformDrawer extends Panel {
 	
 	public void setVisibleArea(long startTime, long durationMillis) {
 		cam.setZoomByDuration(durationMillis, audioPlayer.getMusicData());
-		cam.setFirstSample(startTime, audioPlayer.getMusicData());
+		cam.setFirstSampleByTime(startTime, audioPlayer.getMusicData());
+		setWaveformChanged(true);
+	}
+	
+	public void setVisibleStartTime(long startTime) { //millis
+		cam.setFirstSampleByTime(startTime, audioPlayer.getMusicData());
+		setWaveformChanged(true);
+	}
+	
+	public void setVisibleStartFrame(int startFrame) {
+		cam.setFirstSample(startFrame, audioPlayer.getMusicData());
+		setWaveformChanged(true);
+	}
+	
+	public int getFirstVisibleFrame() {
+		return cam.getFirstSample();
+	}
+	
+	public int getLastVisibleFrame() {
+		return cam.getLastSample(audioPlayer.getMusicData());
+	}
+	
+	public long getVisibleStartTimeMillis() {
+		return audioPlayer.getMusicData().frameToMillis(getFirstVisibleFrame());
+	}
+	
+	public long getVisibleEndTimeMillis() {
+		return audioPlayer.getMusicData().frameToMillis(getLastVisibleFrame());
+	}
+	
+	public long xLengthToDurationMillis(int xLength) {
+		return audioPlayer.getMusicData().frameToMillis(xLengthToFrameCount(xLength));
+	}
+	
+	public int xLengthToFrameCount(int xLength) {
+		int visibleFrameCount = cam.getVisibleSampleCount(audioPlayer.getMusicData());
+		int w = getWaveformAreaWidth();
+		double ratio = xLength / (double) w;
+		return (int) (visibleFrameCount * ratio);
 	}
 }

@@ -21,7 +21,7 @@ public class PlayerInput implements MouseInputListener, MouseWheelListener, KeyL
 	
 	@Override
 	public void mouseClicked(MouseEvent e) {
-		
+		gui.mouseClicked(e);
 	}
 	
 	@Override

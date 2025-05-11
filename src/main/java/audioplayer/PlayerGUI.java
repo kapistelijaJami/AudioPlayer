@@ -76,6 +76,7 @@ public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
 	}
 	
 	//Override these if you need them:
+	public void mouseClicked(MouseEvent e) {}
 	public void mousePressed(MouseEvent e) {}
 	public void mouseDragged(MouseEvent e) {}
 	public void mouseReleased(MouseEvent e) {}
@@ -108,7 +109,7 @@ public abstract class PlayerGUI<T extends WaveformDrawer> extends GameLoop {
 			canvas.addMouseWheelListener(input);
 			canvas.addComponentListener(input);
 			canvas.addKeyListener(input);
-
+			
 			GlobalMouseHook mouseHook = new GlobalMouseHook();
 			mouseHook.addMouseListener(input);
 		}

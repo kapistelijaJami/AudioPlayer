@@ -12,7 +12,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import uilibrary.Panel;
-import uilibrary.RenderText;
+import uilibrary.util.RenderText;
 
 public class VolumeSlider extends Panel {
 	private VolumeController volumeController;
