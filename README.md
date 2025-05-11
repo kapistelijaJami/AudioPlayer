@@ -4,7 +4,7 @@ Audio player made with java. Drag and drop an audio file, and it will parse it a
 ## Dependencies
 - [AudioFileReader](https://github.com/kapistelijaJami/AudioFileReader)
 - [UILibrary](https://github.com/kapistelijaJami/UILibrary)
-- [FFmpeg installed](https://www.ffmpeg.org/)
+- [FFmpeg](https://www.ffmpeg.org/) installed
 
 ## Preview
 This is what the player looks like:
