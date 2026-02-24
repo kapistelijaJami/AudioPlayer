@@ -1,4 +1,4 @@
-# UILibrary
+# AudioPlayer
 Audio player made with java. Drag and drop an audio file, and it will parse it and display the waveform which you can zoom in as well.
 
 ## Dependencies
